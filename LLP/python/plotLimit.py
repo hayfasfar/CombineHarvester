@@ -4,7 +4,7 @@ import numpy
 import math
 import ROOT
 import random
-
+import json
 import scipy
 import scipy.interpolate
 
@@ -129,13 +129,13 @@ ROOT.gStyle.SetLineScalePS(2)
 
 ROOT.gStyle.SetPaintTextFormat("3.0f")
 
-NRGBs = 5;
+NRGBs = 7;
 NCont = 255;
 
-stops = numpy.array( [0.00, 0.34, 0.61, 0.84, 1.00] )
-red  = numpy.array( [0.00, 0.00, 0.87, 1.00, 0.51] )
-green = numpy.array( [0.00, 0.81, 1.00, 0.20, 0.00] )
-blue = numpy.array( [0.51, 1.00, 0.12, 0.00, 0.00] )
+stops = numpy.array( [0.0,0.15, 0.4, 0.55,0.65, 0.88, 1.00] )
+red  = numpy.array( [0.6,0.00, 0.00,0.3, 0.87, 1.00, 0.51] )
+green = numpy.array( [0.0,0.00, 0.81,0.8, 1.00, 0.20, 0.00] )
+blue = numpy.array( [0.8,0.51, 1.00,0.1, 0.12, 0.00, 0.00] )
 
 colWheelDark = ROOT.TColor.CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont)
 
@@ -146,6 +146,31 @@ for i in range(NRGBs):
 
 colWheel = ROOT.TColor.CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont)
 ROOT.gStyle.SetNumberContours(NCont)
+'''
+
+NRGBs = 3;
+NCont = 8;
+
+stops = numpy.array( [0.0, 0.5, 1.00] )
+red  = numpy.array( [0.05,  0.1,  0.95] )
+green = numpy.array( [0.35, 0.95,  0.75] )
+blue = numpy.array( [0.95,  0.75, 0.05] )
+
+colWheelDark = ROOT.TColor.CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont)
+
+
+colWheel = ROOT.TColor.CreateGradientColorTable(NRGBs, stops, red, green, blue, NCont)
+ROOT.gStyle.SetNumberContours(NCont)
+
+'''
+'''
+stops = numpy.array( [0.00, 0.20, 0.4, 0.6, 0.8, 1.00] )
+red  = numpy.array( [163/255., 123/255.,  96/255., 145/255., 221/255., 253/255.] )
+green = numpy.array( [33/255.,  77/255., 180/255., 242/255., 223/255., 217/255.] )
+blue = numpy.array([254./255., 251/255., 237/255., 180/255., 165/255., 209/255.] )
+colWheel = ROOT.TColor.CreateGradientColorTable(6, stops, red, green, blue, 255)
+ROOT.gStyle.SetNumberContours(255)
+'''
 ROOT.gRandom.SetSeed(123)
 
 colors=[]
@@ -167,18 +192,27 @@ def getDarkerColor(color):
     darkerColor=newColor(color.GetRed()*0.6,color.GetGreen()*0.6,color.GetBlue()*0.6)
     return darkerColor
 
-massesDict = {
-    600:[0,200,400,500],
-    800:[0,200,400,600,700],
-    1000:[0,200,400,600,800,900],
-    1200:[0,200,400,600,800,900,1000,1100],
-    1400:[0,200,400,600,800,900,1000,1200,1300],
-    1600:[0,200,400,600,800,900,1000,1200,1400],
-    1800:[0,200,400,600,800,1000,1200,1400],
-    2000:[0,200,400,600,800,1000,1200,1400],
-    2200:[0,200,400,600,800,1000,1200,1400],
-    2400:[0,200,400,600,800,1000,1200,1400]
-}
+with open('eventyields.json',) as f:
+    genweights = json.load(f)
+
+ctauValues = ["0p001","0p01","0p1","1","10","100","1000","10000"]
+
+massesDict = {}
+for ctau in ctauValues:
+    ctauSampleName = "SMS-T1qqqq_ctau-%s_TuneCUETP8M1_13TeV-madgraphMLM-pythia8"%ctau
+    if not massesDict.has_key(ctau):
+        massesDict[ctau] = {}
+    for signalSample in [ctauSampleName,ctauSampleName+"_extra"]:
+        for llpMass in genweights[signalSample]:
+            for lspMass in genweights[signalSample][llpMass]:
+                if genweights[signalSample][llpMass][lspMass]<10:
+                    continue
+                if int(llpMass)==int(lspMass):
+                    continue
+                if not massesDict[ctau].has_key(llpMass):
+                    massesDict[ctau][llpMass] = []
+                if not lspMass in massesDict[ctau][llpMass]:
+                    massesDict[ctau][llpMass].append(lspMass)
 
 def getTheoryXsecFct(filePath):
     f = open(filePath)
@@ -242,8 +276,8 @@ def interpolatedLimitFct(result,kind="median"):
     for llpMass in sorted(result.keys()):
         for lspMass in sorted(result[llpMass].keys()):
             loglimit = math.log(result[llpMass][lspMass][kind])
-            xvalues.append(llpMass)
-            yvalues.append(llpMass-lspMass)
+            xvalues.append(int(llpMass))
+            yvalues.append(math.sqrt(int(llpMass)-int(lspMass)))
             zvalues.append(loglimit)
     xvalues = numpy.array(xvalues,dtype=numpy.float32)
     yvalues = numpy.array(yvalues,dtype=numpy.float32)
@@ -257,6 +291,13 @@ def interpolatedLimitFct(result,kind="median"):
         ky=3,
         s=1e-3
     )
+       
+    def getValue(llpMass,lspMass):
+        tckCopy = numpy.copy(tck)
+        return numpy.exp(scipy.interpolate.bisplev(
+            1.*int(llpMass),1.*math.sqrt(int(llpMass)-int(lspMass)),tckCopy
+        ))
+        
     n = 0
     meanDiff = 0.
     meanDiff2 = 0.
@@ -265,22 +306,33 @@ def interpolatedLimitFct(result,kind="median"):
         for lspMass in sorted(result[llpMass].keys()):
             n+=1
             limit = (result[llpMass][lspMass][kind])
-            limitSmooth = numpy.exp(scipy.interpolate.bisplev(
-                1.*llpMass,1.*(llpMass-lspMass),tck
-            ))
+            limitSmooth = getValue(1.*int(llpMass),1.*int(lspMass))
             diff = 1-limitSmooth/limit
             meanDiff += math.fabs(diff)
             meanDiff2 += math.fabs(diff)**2
             maxDiff = max(maxDiff, math.fabs(diff))
     print "rel. interpolation difference mean: %5.3f+-%.3f (max: %5.3f)"%(meanDiff/n,math.sqrt(meanDiff2/n-(meanDiff/n)**2),maxDiff)
-    
-    def getValue(llpMass,lspMass):
-        return numpy.exp(scipy.interpolate.bisplev(
-            1.*llpMass,1.*(llpMass-lspMass),tck
-        ))
+ 
+        
     return getValue
     
+def parseCombineJson(filePath):
     
+    data = json.load(open(filePath))
+    #note: combine seems to be not very precise here
+    mapping = {
+        "median": "exp0", 
+        "+1":"exp+1", 
+        "-1":"exp-1",
+        "+2":"exp+2",
+        "-2":"exp-2"
+    }
+    result = {}
+    for k,v in mapping.iteritems():
+        if data["120.0"].has_key(v):
+            result[k]=data["120.0"][v]
+        
+    return result
 
 def parseCombineResult(filePath):
     rootFile = ROOT.TFile(filePath)
@@ -307,25 +359,51 @@ def parseCombineResult(filePath):
 
     return result
 
-basePath = "cards"
+basePath = "limits"
 
 results = {}
 
-for ctau in [1]:
+ctauValues = ["0p001","0p01","0p1","1","10","100","1000","10000"]
+#ctauValues = ["1","10","100","1000","10000"]
+ctauLabels = {
+    "0p001":"1#kern[-0.5]{ }#mum",
+    "0p01":"10#kern[-0.5]{ }#mum",
+    "0p1":"100#kern[-0.5]{ }#mum",
+    "1":"1#kern[-0.5]{ }mm",
+    "10":"10#kern[-0.5]{ }mm",
+    "100":"100#kern[-0.5]{ }mm",
+    "1000":"1#kern[-0.5]{ }m",
+    "10000":"10#kern[-0.5]{ }m",
+}
+ctauValueMap = {
+    "0p001":0,
+    "0p01":1,
+    "0p1":2,
+    "1":3,
+    "10":4,
+    "100":5,
+    "1000":6,
+    "10000":7,
+}
+
+for ctau in ctauValues:
     results[ctau] = {}
-    for llpMass in sorted(massesDict.keys()):
+    for llpMass in sorted(massesDict[ctau].keys()):
         results[ctau][llpMass] = {}
-        for lspMass in massesDict[llpMass]:
-            signalProcess = "ctau%i_llp%i_lsp%i"%(ctau,llpMass,lspMass)
-            combineOutputFile = os.path.join(basePath,signalProcess,"higgsCombineTest.AsymptoticLimits.mH120.root")
-            result = parseCombineResult(combineOutputFile)
+        for lspMass in massesDict[ctau][llpMass]:
+            signalProcess = "ctau%s_llp%s_lsp%s"%(ctau,llpMass,lspMass)
+            combineJsonFile = os.path.join(basePath,"limits_%s.json"%signalProcess)
+            result = parseCombineJson(combineJsonFile)
             if len(result.keys())!=5:
-                print "WARNING: Not all quantiles found in file ",combineOutputFile
+                print "WARNING: Not all quantiles found in file ",combineJsonFile
             if not result.has_key("median"):
-                print "ERROR: Median found in file ",combineOutputFile," -> skip"
+                print "ERROR: Median found in file ",combineJsonFile," -> skip"
             else:
                 results[ctau][llpMass][lspMass] = result
                 
+   
+limitsU = {}
+limitsC = {}
    
 for ctau in results.keys():
     cv = ROOT.TCanvas("cv","",850,700)
@@ -336,10 +414,10 @@ for ctau in results.keys():
     cv.SetLogz(1)
     xmin = 600
     ymin = 0
-    xmax = 2400
-    ymax = 1600
+    xmax = 2800
+    ymax = 2800
 
-    axis = ROOT.TH2F("axis",";m#lower[0.2]{#scale[0.8]{#tilde{g}}} (GeV); m#lower[0.2]{#scale[0.8]{#tilde{#chi}#lower[-0.5]{#scale[0.65]{0}}#kern[-1.2]{#lower[0.6]{#scale[0.65]{1}}}}} (GeV)",
+    axis = ROOT.TH2F("axis"+ctau,";m#lower[0.2]{#scale[0.8]{#tilde{g}}} (GeV); m#lower[0.2]{#scale[0.8]{#tilde{#chi}#lower[-0.5]{#scale[0.65]{0}}#kern[-1.2]{#lower[0.6]{#scale[0.65]{1}}}}} (GeV)",
         (xmax-xmin)/50+1,numpy.linspace(xmin-25,xmax+25,(xmax-xmin)/50+2),
         (ymax-ymin)/50+1,numpy.linspace(ymin-25,ymax+25,(ymax-ymin)/50+2)
     )
@@ -349,9 +427,8 @@ for ctau in results.keys():
         if xbin%4==0:
             axis.GetXaxis().SetBinLabel(xbin+1,"%.0f"%axis.GetXaxis().GetBinCenter(xbin+1))
     axis.Draw("colz")    
-    axis.GetZaxis().SetTitle("95% CL upper limit on #sigma#lower[0.2]{#scale[0.8]{pp#rightarrow#tilde{g}#tilde{g}}} (pb)")
-    axis.GetZaxis().Set(50,0.0005,0.5)
-    axis.GetZaxis().SetRangeUser(0.0008,0.15)
+    axis.GetZaxis().SetTitle("95% CL expected limit #sigma#lower[0.2]{#scale[0.8]{pp#rightarrow#tilde{g}#tilde{g}}} (pb)")
+    axis.GetZaxis().SetRangeUser(0.0002,0.05)
     
     axis.GetXaxis().SetNoExponent(True)
     #axis.GetXaxis().LabelsOption("v")
@@ -361,23 +438,37 @@ for ctau in results.keys():
     
     
     
-    limitHist = ROOT.TH2F("limitHist",";m#lower[0.2]{#scale[0.8]{#tilde{g}}} (GeV); m#lower[0.2]{#scale[0.8]{#tilde{#chi}#lower[-0.5]{#scale[0.65]{0}}#kern[-1.2]{#lower[0.6]{#scale[0.65]{1}}}}} (GeV)",
+    limitHist = ROOT.TH2F("limitHist"+ctau,";m#lower[0.2]{#scale[0.8]{#tilde{g}}} (GeV); m#lower[0.2]{#scale[0.8]{#tilde{#chi}#lower[-0.5]{#scale[0.65]{0}}#kern[-1.2]{#lower[0.6]{#scale[0.65]{1}}}}} (GeV)",
         (xmax-xmin)/50+1,numpy.linspace(xmin-25,xmax+25,(xmax-xmin)/50+2),
         (ymax-ymin)/50+1,numpy.linspace(ymin-25,ymax+25,(ymax-ymin)/50+2)
     )
     boxes = []
     for llpMass in sorted(results[ctau].keys()):
         for lspMass in sorted(results[ctau][llpMass].keys()):
-            limitHist.Fill(llpMass,lspMass,results[ctau][llpMass][lspMass]["median"])
+            limitHist.Fill(int(llpMass),int(lspMass),results[ctau][llpMass][lspMass]["median"])
+            '''
             box= ROOT.TBox(llpMass-27,lspMass-27,llpMass+27,lspMass+27)
             box.SetLineColor(ROOT.kWhite)
             box.SetLineWidth(2)
             box.SetFillStyle(0)
-            boxes.append(box)
+            '''
+            marker= ROOT.TMarker(int(llpMass),int(lspMass),20)
+            marker.SetMarkerColor(ROOT.kWhite)
+            marker.SetMarkerSize(1.4)
+            boxes.append(marker)
     
     limitFct = interpolatedLimitFct(
         results[ctau],
         kind="median"
+    )
+    
+    limitFctUp = interpolatedLimitFct(
+        results[ctau],
+        kind="+1"
+    )
+    limitFctDown = interpolatedLimitFct(
+        results[ctau],
+        kind="-1"
     )
     
     limitHistSmooth = interpolatedHist(
@@ -385,16 +476,18 @@ for ctau in results.keys():
         numpy.linspace(xmin-25,xmax+25,(xmax-xmin)/10),
         numpy.linspace(ymin-25,ymax+25,(ymax-ymin)/10)
     )
+    
+    
     limitHistSmooth.Draw("colSame")
-    limitHist.Draw("colSame")
+    #limitHist.Draw("colSame")
     
     for box in boxes:
         box.Draw("L")
     
     
     poly = ROOT.TPolyLine(3,
-        numpy.array([600-25,1600+25,600-25],dtype=numpy.float32), 
-        numpy.array([600-25,1600+25,1600+25],dtype=numpy.float32),
+        numpy.array([600-25,2800+25,600-25],dtype=numpy.float32), 
+        numpy.array([600-25,2800+25,2800+25],dtype=numpy.float32),
     )
     poly.SetFillColor(ROOT.kGray)
     poly.SetFillStyle(3445)
@@ -413,16 +506,20 @@ for ctau in results.keys():
     llpMassExpDown = []
     lspMassExpDown = []
     
-    for angle in numpy.linspace(0.0,math.pi/4,100):
+    for angle in numpy.linspace(0.0,math.pi/4,50):
         foundDown = False
         foundMedian = False
         foundUp = False
-        for r in numpy.linspace(1000,2500,1000):
+        for r in numpy.linspace(1500,3000,1000):
             llpMass = r*math.cos(angle)
             lspMass = r*math.sin(angle)
+            if llpMass>(xmax) or lspMass>(ymax):
+                continue
             xsecTheo,xsecTheoUp,xsecTheoDown = xsecFct(llpMass)
             xsecLimit = limitFct(llpMass,lspMass)
-            if not foundDown and xsecLimit>xsecTheoDown:
+            xsecLimitUp = limitFctUp(llpMass,lspMass)
+            xsecLimitDown = limitFctDown(llpMass,lspMass)
+            if not foundDown and xsecLimitDown>xsecTheo:
                 llpMassExpDown.append(llpMass)
                 lspMassExpDown.append(lspMass)
                 foundDown = True
@@ -430,15 +527,41 @@ for ctau in results.keys():
                 llpMassExpMedian.append(llpMass)
                 lspMassExpMedian.append(lspMass)
                 foundMedian = True
-            if not foundUp and xsecLimit>xsecTheoUp:
+            if not foundUp and xsecLimitUp>xsecTheo:
                 llpMassExpUp.append(llpMass)
                 lspMassExpUp.append(lspMass)
                 foundUp = True
             if foundDown and foundMedian and foundUp:
                 break
+                
+    foundC=False
+    foundU=False
+    for r in numpy.linspace(500,3000,2000):
+        llpMassC = r
+        lspMassC = r-100.
+        llpMassU = r
+        lspMassU = 100.
+        
+        xsecTheoC,_,_ = xsecFct(llpMassC)
+        xsecLimitC = limitFct(llpMassC,lspMassC)
+        if not foundC and xsecLimitC>xsecTheoC:
+            limitsC[ctau]=llpMassC
+            foundC = True
+        
+        xsecTheoU,_,_ = xsecFct(llpMassU)
+        xsecLimitU = limitFct(llpMassU,lspMassU)
+        if not foundU and xsecLimitU>xsecTheoU:
+            limitsU[ctau]=llpMassU
+            foundU = True
             
-    print llpMassExpMedian[0],lspMassExpMedian[0]
-    
+        if foundC and foundU:
+            break
+        
+    if not foundC:
+        limitsC[ctau]=0
+    if not foundU:
+        limitsU[ctau]=0
+        
     llpMassExpMedian = numpy.array(llpMassExpMedian)
     lspMassExpMedian = numpy.array(lspMassExpMedian)
     
@@ -454,7 +577,7 @@ for ctau in results.keys():
         lspMassExpMedian
     )
     polyExpMedian.SetLineColor(ROOT.kBlack)
-    polyExpMedian.SetLineWidth(2)
+    polyExpMedian.SetLineWidth(3)
     polyExpMedian.Draw("L")
     
     polyExpDown = ROOT.TPolyLine(
@@ -479,8 +602,53 @@ for ctau in results.keys():
     
     ROOT.gPad.RedrawAxis()
     
-    cv.Print("limits_ctau%i.pdf"%ctau)
-    cv.Print("limits_ctau%i.png"%ctau)
+    pTextCMS = ROOT.TPaveText(cv.GetLeftMargin(),1-cv.GetTopMargin()*0.4,cv.GetLeftMargin(),1-cv.GetTopMargin()*0.4,"NDC")
+    pTextCMS.AddText("CMS")
+    pTextCMS.SetTextFont(63)
+    pTextCMS.SetTextSize(32)
+    pTextCMS.SetTextAlign(13)
+    pTextCMS.Draw("Same")
     
+    pTextPreliminary = ROOT.TPaveText(cv.GetLeftMargin()+0.08,1-cv.GetTopMargin()*0.4,cv.GetLeftMargin()+0.08,1-cv.GetTopMargin()*0.4,"NDC")
+    pTextPreliminary.AddText("Preliminary")
+    pTextPreliminary.SetTextFont(53)
+    pTextPreliminary.SetTextSize(32)
+    pTextPreliminary.SetTextAlign(13)
+    pTextPreliminary.Draw("Same")
     
+    pTextCTau = ROOT.TPaveText(1-cv.GetRightMargin(),1-cv.GetTopMargin()*0.4,1-cv.GetRightMargin(),1-cv.GetTopMargin()*0.4,"NDC")
+    pTextCTau.AddText("c#tau#kern[-0.5]{ }=#kern[-0.8]{ }%s"%ctauLabels[ctau])
+    pTextCTau.SetTextFont(43)
+    pTextCTau.SetTextSize(32)
+    pTextCTau.SetTextAlign(33)
+    pTextCTau.Draw("Same")
+    
+    cv.Print("limits_ctau%s.pdf"%ctau)
+    cv.Print("limits_ctau%s.png"%ctau)
+    
+xvalues = numpy.linspace(-6,1,num=8)
+yvaluesC = numpy.zeros(8)
+yvaluesU = numpy.zeros(8)
+
+for ctau in limitsU.keys():
+    yvaluesC[ctauValueMap[ctau]]=limitsC[ctau]
+    yvaluesU[ctauValueMap[ctau]]=limitsU[ctau]
+    
+cv = ROOT.TCanvas("summary","",800,600)
+axis = ROOT.TH2F("axis","",50,-6.2,2.2,50,500,3000)
+axis.Draw("AXIS")
+graphC = ROOT.TGraph(8,xvalues,yvaluesC)
+graphC.SetLineColor(ROOT.kMagenta+1)
+graphC.SetLineWidth(3)
+graphC.SetLineStyle(2)
+graphC.Draw("L")
+graphU = ROOT.TGraph(8,xvalues,yvaluesU)
+graphU.SetLineColor(ROOT.kViolet+1)
+graphU.SetLineWidth(3)
+graphU.SetLineStyle(2)
+graphU.Draw("L")
+cv.Print("summary.pdf")
+cv.Print("summary.png")
+
+
 
