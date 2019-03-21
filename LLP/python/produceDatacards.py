@@ -1,10 +1,24 @@
 import os
 import sys
 import json
+import ROOT
 import CombineHarvester.CombineTools.ch as ch
 
+ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
+
+def getHist(fileName,histName):
+    rootFile = ROOT.TFile(fileName)
+    hist = rootFile.Get(histName)
+    hist = hist.Clone()
+    hist.SetDirectory(0)
+    rootFile.Close()
+    return hist
     
-def makeDatacard(cats,ctau,signalProc,outputPath,systematics=[]):
+alpha = 1. - 0.6827
+upErr = ROOT.Math.gamma_quantile_c(alpha/2,1,1)
+
+    
+def makeDatacard(cats,ctau,signalProc,histPath,outputPath,systematics=[]):
     print "Producing datacards for signal '"+signalProc+"' under '"+outputPath+"'"
     if os.path.exists(outputPath):
         pass
@@ -12,33 +26,95 @@ def makeDatacard(cats,ctau,signalProc,outputPath,systematics=[]):
         os.makedirs(outputPath)
         
     cb = ch.CombineHarvester()
-    cb.AddProcesses(era=["13TeV2016"],procs=["WJetsHT","st","ttbar","QCDHT","ZNuNu"],bin=cats,signal=False)
-    cb.AddProcesses(era=["13TeV2016"],procs=[signalProc],bin=cats,signal=True)
-
-    cb.cp().AddSyst(cb,"lumi_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.026))
-    cb.cp().process(['QCDHT']).AddSyst(cb,"qcd_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.3))
-    cb.cp().process(['WJetsHT']).AddSyst(cb,"wzjets_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.3))
-    cb.cp().process(['st','ttbar']).AddSyst(cb,"topbkg_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.1))
-    cb.cp().process(['ZNuNu']).AddSyst(cb,"ZNuNu_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.3))
+    #cb.SetVerbosity(0)
+    cb.AddProcesses(era=["13TeV2016"],procs=["WJets","st","ttbar","ZNuNu"],bin=cats.values(),signal=False)
     
+    #add signal only to region 'D'
+    cb.AddProcesses(era=["13TeV2016"],procs=[signalProc],bin=[cats['D']],signal=True)
+
+    cb.cp().AddSyst(cb,"lumi","lnN",ch.SystMap("era")(["13TeV2016"],1.026))
+    #cb.cp().process(['QCDHT']).AddSyst(cb,"qcd_$ERA","lnN",ch.SystMap("era")(["13TeV2016"],1.2))
+    cb.cp().process(['WJets']).AddSyst(cb,"wzjets_yield","lnN",ch.SystMap("era")(["13TeV2016"],1.2))
+    cb.cp().process(['st','ttbar']).AddSyst(cb,"topbkg_yield","lnN",ch.SystMap("era")(["13TeV2016"],1.2))
+    cb.cp().process(['ZNuNu']).AddSyst(cb,"znunnu_yield","lnN",ch.SystMap("era")(["13TeV2016"],1.2))
+    
+    
+        
     for syst in systematics:
         cb.cp().AddSyst(cb,syst, "shape", ch.SystMap("era")(["13TeV2016"],1.0))
         
     cb.cp().ExtractShapes(
-           "hists2/hist_%s.root"%ctau,
+           os.path.join(histPath,"hists_%s.root"%ctau),
           "$BIN_$PROCESS",
           "$BIN_$PROCESS_$SYSTEMATIC")
-
     
+        
+    nbins = -1
+    
+    for region in ["A","B","C"]:
+        qcdHistNominal = getHist(
+            os.path.join(histPath,"hists_%s.root"%ctau),
+            "llp%s_QCDHT"%region
+        )
+        nbins = qcdHistNominal.GetNbinsX()
+        for ibin in range(nbins):
+            proc = ch.Process()
+            processName = 'QCD_llp%s_bin%i'%(region,ibin+1)
+            systName = 'qcd_llp%s_bin%i'%(region,ibin+1)
+            proc.set_process(processName)
+            proc.set_bin('llp%s'%region)
+            proc.set_era('13TeV2016')
+            hist = ROOT.TH1F("qcdHist_llp%s_bin%i"%(region,ibin+1),"",nbins,-0.5,nbins-0.5)
+            hist.Fill(ibin)
+            hist.SetDirectory(0)
+            proc.set_shape(hist,True)
+            cb.InsertProcess(proc)
+            
+            cb.cp().process([processName]).AddSyst(cb,systName,"rateParam",
+                ch.SystMap("era")(["13TeV2016"],max(10**-3,qcdHistNominal.GetBinContent(ibin+1)))
+            )
+            param =  cb.GetParameter(systName)
+            avgWeight = qcdHistNominal.Integral()/qcdHistNominal.GetEntries() if hist.GetEntries()>0 else 1.
+            param.set_val(max(upErr*avgWeight,qcdHistNominal.GetBinContent(ibin+1)))
+            param.set_range(0.,qcdHistNominal.GetBinContent(ibin+1)*10+qcdHistNominal.Integral()*0.1+100)
+    
+    qcdProcessNamesInSR = []
+    for ibin in range(nbins):
+        proc = ch.Process()
+        processName = 'QCD_llp%s_bin%i'%('D',ibin+1)
+        qcdProcessNamesInSR.append(processName)
+        systNameA = 'qcd_llp%s_bin%i'%('A',ibin+1)
+        systNameB = 'qcd_llp%s_bin%i'%('B',ibin+1)
+        systNameC = 'qcd_llp%s_bin%i'%('C',ibin+1)
+        systNameD = 'qcd_llp%s_bin%i'%('D',ibin+1)
+        proc.set_process(processName)
+        proc.set_bin('llp%s'%region)
+        proc.set_era('13TeV2016')
+        hist = ROOT.TH1F("qcdHist_llp%s_bin%i"%(region,ibin+1),"",nbins,-0.5,nbins-0.5)
+        hist.Fill(ibin)
+        hist.SetDirectory(0)
+        proc.set_shape(hist,True)
+        cb.InsertProcess(proc)
+        # B | D   
+        # A | C   => C/A=D/B => D = B*C/A
+        cb.cp().process([processName]).AddSyst(cb,systNameD,"rateParam",
+            ch.SystMap("era")(["13TeV2016"],(
+                "TMath::Max(@0,0)*TMath::Min(TMath::Max(@1,0)/TMath::Max(@2,0),10.)",
+                systNameB+","+systNameC+","+systNameA
+            ))
+        )
+        
+    cb.cp().process(qcdProcessNamesInSR).AddSyst(cb,'qcd_yield',"lnN",ch.SystMap("era")(["13TeV2016"],1.5))
+        
     bbFactory = ch.BinByBinFactory()
     bbFactory.SetAddThreshold(0.1)
     #bbFactory.SetMergeThreshold(0.5)
     bbFactory.SetFixNorm(True)
+    #bbFactory.SetPoissonErrors(True)
     bbFactory.SetPattern("bb_$BIN_$PROCESS_bin_$#")
     #bbFactory.MergeBinErrors(cb.cp().backgrounds())
-    bbFactory.AddBinByBin(cb.cp().backgrounds(), cb)
+    bbFactory.AddBinByBin(cb.cp().process(['WJets','st','ttbar','ZNuNu']), cb)
     
-
     #cb.PrintAll()
 
     cb.cp().WriteDatacard(
@@ -47,17 +123,14 @@ def makeDatacard(cats,ctau,signalProc,outputPath,systematics=[]):
     )
     
 
-htBins = [200,700,1300,10000]
-mhtBins = [300,600,10000]
-jetBins = [3,4,5,50]
 ctauValues = ["0p001","0p01","0p1","1","10","100","1000","10000"]
-systematics = ["jes","jer","unclEn","pu"]
+#ctauValues = ["1"]
 
-categories = []
-for jetBin in range(len(jetBins)-1):
-    for htBin in range(len(htBins)-1):
-        for mhtBin in range(len(mhtBins)-1):
-            categories.append((len(categories),"jet%i_ht%i_mht%i"%(jetBins[jetBin],htBins[htBin],mhtBins[mhtBin])))
+systematics = ["jes","jer","unclEn","pu","wjetsScale","ttbarScale","stScale","znunuScale"]
+
+categories = {}
+for region in ['A','B','C','D']:
+    categories[region] = ((len(categories),"llp"+region))
 print categories
 
 with open('eventyields.json',) as f:
@@ -69,9 +142,9 @@ for ctau in ctauValues:
     if not massesDict.has_key(ctau):
         massesDict[ctau] = {}
     for signalSample in [ctauSampleName,ctauSampleName+"_extra"]:
-        for llpMass in genweights[signalSample]:
-            for lspMass in genweights[signalSample][llpMass]:
-                if genweights[signalSample][llpMass][lspMass]<10:
+        for llpMass in genweights[signalSample].keys():
+            for lspMass in genweights[signalSample][llpMass].keys():
+                if genweights[signalSample][llpMass][lspMass]["sum"]<10:
                     continue
                 if int(llpMass)==int(lspMass):
                     continue
@@ -80,7 +153,8 @@ for ctau in ctauValues:
                 if not lspMass in massesDict[ctau][llpMass]:
                     massesDict[ctau][llpMass].append(lspMass)
 
-basePath = "cards3"
+basePath = "cards"
+histPath = "hists"
 if os.path.exists(os.path.join(basePath,'log')):
     pass
 else:
@@ -96,17 +170,20 @@ for ctau in ctauValues:
                 categories,
                 ctau,
                 signalProcess,
+                histPath,
                 datacardPath,
                 systematics=systematics
             )
             
             jobArrayCfg.append([datacardPath])
+
+
             
 submitFile = open("runCombine.sh","w")
 submitFile.write('''#!/bin/bash
 #$ -cwd
 #$ -q hep.q
-#$ -l h_rt=00:30:00 
+#$ -l h_rt=08:00:00 
 #$ -t 1-'''+str(len(jobArrayCfg))+'''
 #$ -e '''+os.path.join(basePath,'log')+'''/log.$TASK_ID.err
 #$ -o '''+os.path.join(basePath,'log')+'''/log.$TASK_ID.out
@@ -131,7 +208,27 @@ echo ${JOBS[$SGE_TASK_ID]}
 cd ${JOBS[$SGE_TASK_ID]}
 #combine -M FitDiagnostics --plots --saveWithUncertainties -t -1 -d out.txt
 #combine -M MultiDimFit --saveFitResult -t -1 -d out.txt
-combine -M AsymptoticLimits --rAbsAcc 0.0000001 --saveToys -t -1 -d out.txt
+
+#for estimating LEE
+#(note: for some weirdness toys>1000 are failing)
+#for i in 12 23 34 45 56 67 78 89 90 91 
+for i in 12 23 34
+    do
+    #note: do not use option '--saveToys' as this will store something else in 'limit' branch
+    combine -M Significance --verbose -1 -t 1000 -s '12'$i'56'$i --maxTries 10 --expectSignal=0 -d out.txt
+    done
+
+#expected impacts
+#note: excluding regex only works in hacked combineTool.py
+text2workspace.py -m 120 out.txt -o workspace.root
+combineTool.py -M Impacts -d workspace.root -m 120 --X-rtd MINIMIZER_analytic --robustFit 1 --doInitialFit -t -1 --expectSignal=1 
+combineTool.py -M Impacts -d workspace.root -m 120 --X-rtd MINIMIZER_analytic --robustFit 1 --doFits --exclude "bb_.*,qcd_llp[ABC].*" -t -1 --expectSignal=1
+combineTool.py -M Impacts -d workspace.root -m 120 --X-rtd MINIMIZER_analytic --exclude "bb_.*,qcd_llp[ABC].*" -o impacts.json
+plotImpacts.py -i impacts.json -o impacts
+
+#expected limits
+combine -M AsymptoticLimits --rAbsAcc 0.000001 --run expected --X-rtd MINIMIZER_analytic --X-rtd MINIMIZER_MaxCalls=99999999999 -t -1 -d out.txt
+
 date
 ''')
 submitFile.close()

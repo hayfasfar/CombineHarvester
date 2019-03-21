@@ -1,0 +1,9 @@
+imax 0  number of channels
+jmax 0  number of backgrounds 
+kmax 1  number of nuisance parameters (sources of systematical uncertainties)
+bin        
+observation 
+bin           
+process       
+------------
+llpEff extArg 1.0 [0.75,1.25]

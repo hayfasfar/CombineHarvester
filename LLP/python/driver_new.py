@@ -127,18 +127,29 @@ def metVar(syst="nominal"):
         return "unclEnDown_met"
     return "nominal_met"
     
-def llpdnnxVar(syst,ctau,m=0):
-    if ctau=="1":
-        ctau=="0"
+def llpdnnxPrefix(syst,ctau):
+    ctauHack = ctau
+    if ctauHack=="1":
+        ctauHack=="0"
     if syst=="jesUp":
-        return "llpdnnx_da_jesUp_%s_LLP_min%i"%(ctau,m)
+        return "llpdnnx_da_jesUp_%s"%(ctau)
     elif syst=="jesDown":
-        return "llpdnnx_da_jesDown_%s_LLP_min%i"%(ctau,m)
+        return "llpdnnx_da_jesDown_%s"%(ctau)
     elif syst=="jerUp":
-        return "llpdnnx_da_jerUp_%s_LLP_min%i"%(ctau,m)
+        return "llpdnnx_da_jerUp_%s"%(ctau)
     elif syst=="jerDown":
-        return "llpdnnx_da_jerDown_%s_LLP_min%i"%(ctau,m)
-    return "llpdnnx_da_nominal_%s_LLP_min%i"%(ctau,m)
+        return "llpdnnx_da_jerDown_%s"%(ctau)
+    return "llpdnnx_da_nominal_%s"%(ctau)
+    
+def llpdnnxVar(syst,ctau,m=0):
+    return llpdnnxPrefix(syst,ctau)+"_LLP_min%i"%(m)
+    
+    
+def llpdnnxNLLPtrue(syst,ctau):
+    return llpdnnxPrefix(syst,ctau)+"_nLLPTrue"
+
+def llpdnnxNLLPtrueTaggedLLP(syst,ctau):
+    return llpdnnxPrefix(syst,ctau)+"_nLLPTrueTaggedLLP"
     
 
 def baseSelection(syst="nominal",region="D"):
@@ -176,24 +187,24 @@ def mcWeight(sampleName,syst="nominal",lumi="35.822"):
         mcWeight+="*(puweight)"
     if sampleName=="WJets":
         if args.syst=="wjetsScaleUp":
-            mcWeight+="*(scaleweight_0/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_0/scaleweight_4)"
         elif args.syst=="wjetsScaleDown":
-            mcWeight+="*(scaleweight_8/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_8/scaleweight_4)"
     elif sampleName=="ttbar":
         if args.syst=="ttbarScaleUp":
-            mcWeight+="*(scaleweight_0/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_0/scaleweight_4)"
         elif args.syst=="ttbarScaleDown":
-            mcWeight+="*(scaleweight_8/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_8/scaleweight_4)"
     elif sampleName=="st":
         if args.syst=="stScaleUp":
-            mcWeight+="*(scaleweight_0/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_0/scaleweight_4)"
         elif args.syst=="stScaleDown":
-            mcWeight+="*(scaleweight_8/scaleweight_4)"
+            mcWeight+="TMath::Range(-2,2,scaleweight_8/scaleweight_4)"
     elif sampleName=="ZNuNu":
         if args.syst=="znunuScaleUp":
-            mcWeight+="*(scaleweight_0/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_0/scaleweight_4)"
         elif args.syst=="znunuScaleDown":
-            mcWeight+="*(scaleweight_8/scaleweight_4)"
+            mcWeight+="*TMath::Range(-2,2,scaleweight_8/scaleweight_4)"
     elif sampleName=="QCDHT":
         pass
     elif sampleName=="SMS-T1qqqq":
@@ -597,105 +608,14 @@ if args.ctau=="1":
     ctauHack = "0"
 
 thresholds = {      
-    "0p001": [
-   [ [0.1911,[ 0.1917, 0.4108, 0.5179, 1.1]],  [1.1,[]]],
-   [ [0.2803,[ 0.2819, 0.4668, 0.5347, 1.1]],  [1.1,[]]],
-   [ [0.2673,[ 0.2676, 0.4425, 0.5131, 1.1]],  [1.1,[]]],
-   [ [0.3562,[ 0.3575, 0.4676, 0.5168, 1.1]],  [1.1,[]]],
-
-
-
-
-
-    ],
-    
-    "0p01": [
-   [ [0.1862,[ 0.1863, 0.4096, 0.5032, 1.1]],  [1.1,[]]],
-   [ [0.2748,[ 0.2758, 0.4604, 0.5390, 1.1]],  [1.1,[]]],
-   [ [0.2607,[ 0.2609, 0.4343, 0.4985, 1.1]],  [1.1,[]]],
-   [ [0.3524,[ 0.3527, 0.4702, 0.5222, 1.1]],  [1.1,[]]],
-
-
-
-
-
-
-
-
-    ],
-    "0p1": [
-   [ [0.1686,[ 0.1689, 0.4022, 0.6364, 1.1]],  [1.1,[]]],
-   [ [0.2616,[ 0.2643, 0.4813, 0.8092, 1.1]],  [1.1,[]]],
-   [ [0.2457,[ 0.2461, 0.4330, 0.7150, 1.1]],  [1.1,[]]],
-   [ [0.3478,[ 0.3479, 0.5196, 0.7178, 1.1]],  [1.1,[]]],
-
-
-
-
-
-
-    ],
-    
-    "0": [
-   [ [0.0671,[ 0.0672, 0.4606, 0.8698, 1.1]],  [1.1,[]]],
-   [ [0.1467,[ 0.1480, 0.6922, 0.9793, 1.1]],  [1.1,[]]],
-   [ [0.1246,[ 0.1265, 0.6356, 0.9259, 1.1]],  [1.1,[]]],
-   [ [0.3599,[ 0.3761, 0.8725, 0.9755, 1.1]],  [1.1,[]]],
-
-
-
-
-
-
-
-    ],
-    "10": [
-   [ [0.0130,[ 0.0132, 0.4827, 0.9551, 1.1]],  [1.1,[]]],
-   [ [0.0322,[ 0.0326, 0.7326, 0.9944, 1.1]],  [1.1,[]]],
-   [ [0.0310,[ 0.0324, 0.7842, 0.9762, 1.1]],  [1.1,[]]],
-   [ [0.2806,[ 0.3417, 0.9746, 0.9949, 1.1]],  [1.1,[]]],
-
-
-
-
-
-
-
-    ],
-    "100": [
-   [ [0.0040,[ 0.0040, 0.3154, 0.9925, 1.1]],  [1.1,[]]],
-   [ [0.0089,[ 0.0095, 0.8302, 0.9926, 1.1]],  [1.1,[]]],
-   [ [0.0121,[ 0.0122, 0.7926, 0.9820, 1.1]],  [1.1,[]]],
-   [ [0.1720,[ 0.1767, 0.9777, 0.9977, 1.1]],  [1.1,[]]],
-
-
-
-
-    ],
-    "1000": [
-   [ [0.0068,[ 0.0068, 0.7826, 0.9980, 1.1]],  [1.1,[]]],
-   [ [0.0116,[ 0.0120, 0.9325, 0.9937, 1.1]],  [1.1,[]]],
-   [ [0.0197,[ 0.0198, 0.8343, 0.9863, 1.1]],  [1.1,[]]],
-   [ [0.1799,[ 0.2065, 0.9870, 0.9973, 1.1]],  [1.1,[]]],
-
-
-
-
-
-
-    
-    ],
-    "10000": [
-   [ [0.0188,[ 0.0188, 0.8455, 0.9978, 1.1]],  [1.1,[]]],
-   [ [0.0337,[ 0.0338, 0.9561, 0.9949, 1.1]],  [1.1,[]]],
-   [ [0.0577,[ 0.0583, 0.9036, 0.9896, 1.1]],  [1.1,[]]],
-   [ [0.2674,[ 0.2798, 0.9921, 0.9981, 1.1]],  [1.1,[]]],
-
-
-
-
-   
-   ],    
+    "0p001": 0.37245617939,
+    "0p01": 0.368606702814,
+    "0p1": 0.343856976757,
+    "0": 0.436759756336,
+    "10": 0.557319806347,
+    "100": 0.64487092329,
+    "1000": 0.565088437328,
+    "10000": 0.590826915035
 }
 
 signalConfigs = []
@@ -732,43 +652,42 @@ for llpMass in sorted(massesDict.keys()):
 
 varBinned=""
 binindex = 1
-htCut = "1000"
-mhtCutHigh = "600"
-mhtCutLow = "500"
-if ctauHack=="1000" or ctauHack=="10000":
-    htCut = "900"
-    mhtCutHigh = "500"
-for cat in range(4):
+htCut = "900"
+
+if args.ctau=="1000" or args.ctau=="10000":
+    htCut = "800."
+
+for cat in range(2):
     if cat==0:
-        varBinned += "("+htVar(args.syst)+">"+htCut+")*("+mhtVar(args.syst)+">"+mhtCutHigh+")*("
+        varBinned += "("+htVar(args.syst)+">"+htCut+")*("
     if cat==1:
-        varBinned += "("+htVar(args.syst)+">"+htCut+")*("+mhtVar(args.syst)+"<"+mhtCutHigh+")*("
-    if cat==2:
-        varBinned += "("+htVar(args.syst)+"<"+htCut+")*("+mhtVar(args.syst)+">"+mhtCutLow+")*("
-    if cat==3:
-        varBinned += "("+htVar(args.syst)+"<"+htCut+")*("+mhtVar(args.syst)+"<"+mhtCutLow+")*("
-
-    for i in range(len(thresholds[ctauHack][cat])-1):
-        tagger2CutLow = thresholds[ctauHack][cat][i][0]
-        tagger2CutHigh = thresholds[ctauHack][cat][i+1][0]
-
-        tagger2CutExp = "("+llpdnnxVar(args.syst,ctauHack,1)+">="+str(tagger2CutLow)+")*("+llpdnnxVar(args.syst,ctauHack,1)+"<"+str(tagger2CutHigh)+")"
-        #print i,tagger1CutExp
+        varBinned += "("+htVar(args.syst)+"<"+htCut+")*("
         
-        varBinned+=tagger2CutExp+"*("
-        
-        for j in range(len(thresholds[ctauHack][cat][i][1])-1):
-            tagger1CutLow = thresholds[ctauHack][cat][i][1][j]
-            tagger1CutHigh = thresholds[ctauHack][cat][i][1][j+1]
-        
-            tagger1CutExp = "("+llpdnnxVar(args.syst,ctauHack,0)+">="+str(tagger1CutLow)+")*("+llpdnnxVar(args.syst,ctauHack,0)+"<"+str(tagger1CutHigh)+")"
-            #print "   ",j,tagger2CutExp
-    
-            varBinned+=tagger1CutExp+"*"+str(binindex)+"+"
-            binindex+=1
-        varBinned+="0)+"
+    for t in [3,5,6]:
+        if t==3:
+            for m in [2]:
+                taggerCutExp=str(binindex)+"*("+nJetVar(args.syst)+"<4.5)"
+                binindex+=1
+                if m==2:
+                    taggerCutExp += "*("+llpdnnxVar(args.syst,ctauHack,1)+">"+str(thresholds[ctauHack])+")"
+                varBinned+=taggerCutExp+"+"
+        elif t==5:
+            for m in [2]:
+                taggerCutExp=str(binindex)+"*("+nJetVar(args.syst)+">4.5)*("+nJetVar(args.syst)+"<5.5)"
+                binindex+=1
+                if m==2:
+                    taggerCutExp += "*("+llpdnnxVar(args.syst,ctauHack,1)+">"+str(thresholds[ctauHack])+")"
+                varBinned+=taggerCutExp+"+"
+        elif t==6:
+            for m in [3]:
+                taggerCutExp=str(binindex)+"*("+nJetVar(args.syst)+">5.5)"
+                binindex+=1
+                if m==3:
+                    taggerCutExp += "*("+llpdnnxVar(args.syst,ctauHack,2)+">"+str(thresholds[ctauHack])+")"
+                varBinned+=taggerCutExp+"+"
     varBinned+="0)+"
 varBinned+="0"
+
     
 nbins = binindex-1
 
@@ -782,6 +701,12 @@ histBinning= {
 
 
 print histBinning
+
+
+fileName = os.path.join(args.output,"hist_%s_%s_%s.root"%(args.ctau,histBinning["name"],args.syst))
+if os.path.exists(fileName):
+    print "Output exists -> skip"
+    sys.exit(0)
     
 histograms = []
 
@@ -789,7 +714,7 @@ def removeNegEntries(hist,avgWeight=-1):
     alpha = 1. - 0.6827
     upErr = ROOT.Math.gamma_quantile_c(alpha/2,1,1)
     avgWeight = hist.Integral()/hist.GetEntries() if hist.GetEntries()>0 else -1
-    print "weight",avgWeight
+    #print "weight",avgWeight
     for ibin in range(hist.GetNbinsX()):
         c = hist.GetBinContent(ibin+1)
         if c<10**-4:
@@ -802,7 +727,7 @@ def removeNegEntries(hist,avgWeight=-1):
                 hist.SetBinError(ibin+1,upErr*avgWeight)
             else:
                 hist.SetBinError(ibin+1,10**-4)
-        print "bin%2i, %.1f+-%.1f (+-%.1f%%)"%(ibin,c,hist.GetBinError(ibin+1),100.*hist.GetBinError(ibin+1)/c if c>0 else -1)
+        #print "bin%2i, %.1f+-%.1f (+-%.1f%%)"%(ibin,c,hist.GetBinError(ibin+1),100.*hist.GetBinError(ibin+1)/c if c>0 else -1)
                 
 systPostfix = "_"+args.syst
 if args.syst=="nominal":
@@ -812,8 +737,13 @@ histBinningWeight = histBinning["weight"]
 print "bin: ",histBinning["name"]
 
 
-for backgroundMCSet in ["WJets","st","ttbar","ZNuNu","QCDHT"]:
-    for region in ["A","B","C","D"]:
+
+
+for region in ["A","B","C","D"]:
+    histBackgroundSum = ROOT.TH1F(histBinning["name"]+region+"_sum"+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
+    histBackgroundSum.SetDirectory(0)
+    histograms.append(histBackgroundSum)
+    for backgroundMCSet in ["WJets","st","ttbar","ZNuNu","QCDHT"]:
         print "  background: ",backgroundMCSet,region
         setWeight = globalMCWeight(backgroundMCSet,region=region)
         histBackground = ROOT.TH1F(histBinning["name"]+region+"_"+backgroundMCSet+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
@@ -854,39 +784,113 @@ for backgroundMCSet in ["WJets","st","ttbar","ZNuNu","QCDHT"]:
                     integralNeg+=processHistNeg.Integral()
                     
                 rootFile.Close()
-                #break
+                break
         
         removeNegEntries(
             histBackground,
             avgWeight=(integralPos-integralNeg)/(sumPos+sumNeg) if (sumPos+sumNeg)>0 else -1
         )
+        histBackgroundSum.Add(histBackground)
         print "    -> ",histBackground.GetEntries(),"/",histBackground.Integral()," entries/integral"
         
-  
-for signalCfg in signalConfigs:
+        
+if args.syst=="nominal":
     for region in ["A","B","C","D"]:
-        print "  signal: ",signalCfg["name"],region
-        signalHist = ROOT.TH1F(histBinning["name"]+region+"_"+signalCfg["name"]+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
-        setWeight = globalMCWeight("SMS-T1qqqq",region)
-        signalHist.SetDirectory(0)
-        histograms.append(signalHist)
-        signalWeight = signalCfg["weight"]
-        #print histBinningWeight+"*"+signalWeight+"*"+setWeight
-        for process in signalCfg["processes"]:
+        print "  data: ",region
+        setWeight = globalDataWeight(region=region)
+        histData = ROOT.TH1F(histBinning["name"]+region+"_data"+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
+        histData.SetDirectory(0)
+        histograms.append(histData)
+        histData.Sumw2()
+        
+        sumPos = 0
+        sumNeg = 0
+        integralPos = 0
+        integralNeg = 0
+        
+        for process in mcSetDict[backgroundMCSet]["processes"]:
+            processWeight = "1"
+            if type(process)==type(list()):
+                processWeight+="*"+process[1]
+                process = process[0]
+            processWeight+="*"+processDict[process]["weight"]
+            #print histBinningWeight+"*"+setWeight+"*"+processWeight
             for ifile,f in enumerate(processDict[process]["files"]):
                 rootFile = ROOT.TFile.Open(f)
                 tree = rootFile.Get("Friends")
                 if tree:
-                    processHist = ROOT.TH1F(histBinning["name"]+"_"+signalCfg["name"]+"_"+process+str(random.random())+str(ifile),"",len(histBinning["binning"])-1,histBinning["binning"])
-                    tree.Project(processHist.GetName(),histBinning["var"],histBinningWeight+"*"+signalWeight+"*"+setWeight)
-                    processHist.SetDirectory(0)
-                    signalHist.Add(processHist)
+                    processHistPos = ROOT.TH1F(histBinning["name"]+"_pos_"+backgroundMCSet+"_"+process+str(random.random())+str(ifile),"",len(histBinning["binning"])-1,histBinning["binning"])
+                    tree.Project(processHistPos.GetName(),histBinning["var"],histBinningWeight+"*"+setWeight+"*"+processWeight+"*(genweight>0)")
+                    
+                    processHistNeg = ROOT.TH1F(histBinning["name"]+"_neg_"+backgroundMCSet+"_"+process+str(random.random())+str(ifile),"",len(histBinning["binning"])-1,histBinning["binning"])
+                    tree.Project(processHistNeg.GetName(),histBinning["var"],histBinningWeight+"*"+setWeight+"*"+processWeight+"*(genweight<0)")
+                    
+                    processHistPos.SetDirectory(0)
+                    processHistNeg.SetDirectory(0)
+                    histBackground.Add(processHistPos)
+                    histBackground.Add(processHistNeg)
+                    
+                    sumPos+=processHistPos.GetEntries()
+                    sumNeg+=processHistNeg.GetEntries()
+                    integralPos+=processHistPos.Integral()
+                    integralNeg+=processHistNeg.Integral()
+                    
                 rootFile.Close()
-                #break
-        removeNegEntries(signalHist,avgWeight=histBackground.Integral()/histBackground.GetEntries())
-        print "    -> ",signalHist.GetEntries(),"/",signalHist.Integral()," entries/integral"
+                break
+        
+        removeNegEntries(
+            histBackground,
+            avgWeight=(integralPos-integralNeg)/(sumPos+sumNeg) if (sumPos+sumNeg)>0 else -1
+        )
+        histBackgroundSum.Add(histBackground)
+        print "    -> ",histBackground.GetEntries(),"/",histBackground.Integral()," entries/integral"
+        
 
-outputFile = ROOT.TFile(os.path.join(args.output,"hist_%s_%s_%s.root"%(args.ctau,histBinning["name"],args.syst)),"RECREATE")
+for signalCfg in signalConfigs:
+    for region in ["D"]:
+        signalHistSum = ROOT.TH1F(histBinning["name"]+region+"_"+signalCfg["name"]+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
+        signalHistSum.SetDirectory(0)
+        histograms.append(signalHistSum)
+        
+        for nLLP in range(7):
+            for nLLPTagged in range(nLLP+1):
+                print "  signal: ",signalCfg["name"],region,nLLP,nLLPTagged
+                signalHist = ROOT.TH1F(histBinning["name"]+region+"_"+signalCfg["name"]+("_%illp%it"%(nLLP,nLLPTagged))+systPostfix,"",len(histBinning["binning"])-1,histBinning["binning"]) #<channel>_<process>_<syst>
+                setWeight = globalMCWeight("SMS-T1qqqq",region)
+                signalHist.SetDirectory(0)
+                histograms.append(signalHist)
+                
+                signalWeight = signalCfg["weight"]
+                if nLLP<6:
+                    signalWeight+=("*("+llpdnnxNLLPtrue(args.syst,ctauHack)+"==%i)*("+llpdnnxNLLPtrueTaggedLLP(args.syst,ctauHack)+"==%i)")%(nLLP,nLLPTagged)
+                else:
+                    if nLLPTagged<nLLP:
+                        signalWeight+=("*("+llpdnnxNLLPtrue(args.syst,ctauHack)+">=%i)*("+llpdnnxNLLPtrueTaggedLLP(args.syst,ctauHack)+"==%i)")%(nLLP,nLLPTagged)
+                    else:
+                        signalWeight+=("*("+llpdnnxNLLPtrue(args.syst,ctauHack)+">=%i)*("+llpdnnxNLLPtrueTaggedLLP(args.syst,ctauHack)+">=%i)")%(nLLP,nLLPTagged)
+                #print histBinningWeight+"*"+signalWeight+"*"+setWeight
+                for process in signalCfg["processes"]:
+                    for ifile,f in enumerate(processDict[process]["files"]):
+                        rootFile = ROOT.TFile.Open(f)
+                        tree = rootFile.Get("Friends")
+                        if tree:
+                            processHist = ROOT.TH1F(histBinning["name"]+"_"+signalCfg["name"]+"_"+process+str(random.random())+str(ifile),"",len(histBinning["binning"])-1,histBinning["binning"])
+                            tree.Project(processHist.GetName(),histBinning["var"],histBinningWeight+"*"+signalWeight+"*"+setWeight)
+                            processHist.SetDirectory(0)
+                            signalHist.Add(processHist)
+                            signalHistSum.Add(processHist)
+                        rootFile.Close()
+                        #break
+                print "    -> ",signalHist.GetEntries(),"/",signalHist.Integral()," entries/integral"
+                removeNegEntries(
+                    signalHist,
+                    avgWeight=-1
+                )
+    removeNegEntries(
+        signalHistSum,
+        avgWeight=signalHistSum.Integral()/(10**-12+signalHistSum.GetEntries())
+    )
+outputFile = ROOT.TFile(fileName,"RECREATE")
 for hist in histograms:
     print "writing hist: ",hist.GetName()
     hist.SetDirectory(outputFile)
