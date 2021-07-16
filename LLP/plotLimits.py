@@ -3,6 +3,7 @@ matplotlib.use('Agg')
 import style
 import ROOT
 ROOT.gROOT.SetBatch(1)
+ROOT.gStyle.SetPalette(ROOT.kDarkRainBow)
 import json
 from array import array
 from scipy import interpolate
@@ -22,13 +23,13 @@ def parse_lookup_table(f, lookup_table):
 
     # parse lookup table
     proc = f.replace(year+"_", "").replace("limits_", "").replace(".json", "")
-    lu_infos = lookup_table[proc]['weights'][str(int(scenario))]
+    lu_infos = lookup_table[proc.replace('pt20', 'all')]['weights'][str(int(scenario))]
     xsec = lu_infos['xsec']['nominal']*K_FACTOR
     coupling = lu_infos['couplings']['Ve']+lu_infos['couplings']['Vmu']+lu_infos['couplings']['Vtau']
     if coupling not in (2, 12, 67):
         coupling = coupling/2
     coupling = coupling ** 2
-    mass = lookup_table[proc]['mass']
+    mass = lookup_table[proc.replace('pt20', 'all')]['mass']
 
     return mass, coupling, xsec
 
@@ -39,12 +40,11 @@ def interpolate_point(coupling_points, mu_points):
     return 
 
 def parse_limit_json(f, scenario=12):
-
     # limit json aggreggate 
     with open(os.path.join(json_path, f)) as json_file:
         xsec_dict = json.load(json_file)
     if str(scenario) not in xsec_dict.keys():
-        raise ValueError
+        return None
     xsec_dict = xsec_dict[str(scenario)]
     # means something failed with combine (shouldn't happend!)
     if "exp0" not in xsec_dict or "exp+1" not in xsec_dict or "exp+2" not in xsec_dict or "exp-1" not in xsec_dict or "exp-2" not in xsec_dict:
@@ -63,7 +63,7 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-json_path = "jsons_old"
+json_path = "jsons"
 
 K_FACTOR = 1.1
 
@@ -71,16 +71,16 @@ lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
+coupling_dict[1.0] = ["emutau", "U_{e} : U_{#mu} : U_{#tau} = 1 : 1 : 1"]
 coupling_dict[2.0] = ["ee", "U_{e} : U_{#mu} : U_{#tau} = 1 : 0 : 0"]
 coupling_dict[7.0] = ["emu", "U_{e} : U_{#mu} : U_{#tau} = 1 : 1 : 0"]
 coupling_dict[12.0] = ["mumu", "U_{e} : U_{#mu} : U_{#tau} = 0 : 1 : 0"]
 coupling_dict[47.0] = ["etau", "U_{e} : U_{#mu} : U_{#tau} = 1 : 0 : 1"]
 coupling_dict[52.0] = ["mutau", "U_{e} : U_{#mu} : U_{#tau} = 0 : 1 : 1"]
-#coupling_dict[67.0] = ["tautau", "U_{e} : U_{#mu} : U_{#tau} = 0 : 0 : 1"]
 
 n_bins = 200
 
-mass_range = np.geomspace(1., 24., num=n_bins)
+mass_range = np.geomspace(1., 20., num=n_bins)
 log_coupling_range = np.linspace(-8, -1., num=n_bins)
 coupling_range = np.power(10, log_coupling_range)
 
@@ -106,9 +106,28 @@ for year in years:
             for f in os.listdir(json_path):
                 if year not in f or ".json" not in f or hnl_type not in f:
                     continue
-
+            
                 xsec_dict = parse_limit_json(f, scenario)
+                if xsec_dict is None:
+                    continue
                 mass, coupling, xsec = parse_lookup_table(f, lookup_table)
+
+                # Reject for now high-mass prompt limits as these negatively impact the interpolation
+                # if mass > 17:
+                #     continue
+                if "ctau1p0e-05" in f: 
+                     continue
+                if "ctau1p0e-03_massHNL10p0" in f:
+                    continue
+                if "ctau1p0e-03_massHNL12p0" in f:
+                    continue
+                if "ctau1p0e-02_massHNL16p0" in f:
+                    continue
+                if "_pt20_" not in f and f.replace("_all_", "_pt20_") in os.listdir(json_path):
+                    print("Skipping "+f+", higher stat. sample exists")
+                    continue
+                # ...
+
                 sigma_dict["theory"].append(xsec)
 
                 for exp_var in ["exp0", "exp+1", "exp+2", "exp-1", "exp-2"]:
@@ -127,6 +146,7 @@ for year in years:
             log_expected_points_plus = np.log10(np.array(df['exp+1']))
             log_expected_points_minus = np.log10(np.array(df['exp-1']))
 
+            df.to_csv("csv/limit_{}_coupling_{}_{}.csv".format(hnl_type, scenario, year))
             n_bins = 200
             grid_x, grid_y = np.meshgrid(mass_range, log_coupling_range, indexing='ij')
             fit_method = 'cubic'
@@ -196,7 +216,12 @@ for year in years:
 
             graph.Draw("SAMEC3")
             points_graph.Draw("P SAME")
+            style.makeText(0.18, 0.7, 0.2, 0.7, coupling_title+", "+hnl_type.capitalize())
+            style.makeCMSText(0.18, 0.87, additionalText="Simulation Preliminary")
+            style.makeLumiText(0.18, 0.8, year=year, lumi=lumi[year])
             cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
+            cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.root".format(hnl_type, scenario, year))
+
             if hnl_type == 'majorana':
                 graph_majorana = graph.Clone("majorana")
             elif hnl_type == 'dirac':

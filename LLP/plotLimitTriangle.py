@@ -11,8 +11,8 @@ import math
 import ctypes
 import itertools 
 
-typeHNL = "Majorana"
-ctau = "10"
+typeHNL = "Dirac"
+ctau = "1"
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptFit(0)
@@ -309,7 +309,7 @@ def makePlot(res, ctau="1", typeHNL="Dirac"):
     pText3.SetTextFont(43)
     pText3.SetTextAlign(31)
     pText3.SetTextSize(40)
-    pText3.AddText("131 fb#lower[-0.7]{#scale[0.7]{-1}}")
+    pText3.AddText("137.1 fb#lower[-0.7]{#scale[0.7]{-1}}")
     pText3.Draw()
     
     pText4 = ROOT.TPaveText(0.03,0.75,0.03,0.88,"NDC")
