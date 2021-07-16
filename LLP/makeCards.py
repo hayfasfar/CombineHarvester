@@ -80,7 +80,7 @@ eval `scramv1 runtime -sh`
 
                 submit_file.write(" \"")
                 submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
-                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
                 submit_file.write("\"")
                 submit_file.write("\n")
 
