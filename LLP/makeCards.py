@@ -52,7 +52,7 @@ eval `scramv1 runtime -sh`
                 if status_dict[YEAR][COUPLING][proc]:
                     path = os.path.join('$PWD/cards/{}/coupling_{}/{}'.format(YEAR, COUPLING, proc))
                     submit_file.write(" \"")
-                    submit_file.write('''combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
+                    submit_file.write('''combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
                     submit_file.write("\"")
                     submit_file.write("\n")
 
@@ -80,7 +80,7 @@ eval `scramv1 runtime -sh`
 
                 submit_file.write(" \"")
                 submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
-                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
                 submit_file.write("\"")
                 submit_file.write("\n")
 
@@ -109,8 +109,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     signal = ["HNL"]
 
     cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
-    cb.AddProcesses(era=[year], procs=signal, bin=cats_signal, signal=True) 
-    # TODO: for now no signal outside region D!
+    cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
     systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track"]
     systematics_correlated = []
@@ -168,7 +167,8 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 
         nbins = 6
         bin_min = 0.5
-        bin_max = nbins+0.5 
+        bin_max = nbins+0.5
+
 
         for region in ["A","B","C", "D"]:
             name = category_name.replace("_D", "_"+region)
@@ -190,23 +190,12 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                 proc.set_shape(hist, True)
                 cb.InsertProcess(proc)
 
-
                 if "_D" in process_name:
                     bkg_processes.append(process_name)
-                    syst_name_A = syst_name.replace("_D", "_A")
-                    syst_name_B = syst_name.replace("_D", "_B")
-                    syst_name_C = syst_name.replace("_D", "_C")
-
-
-                    cb.cp().process([process_name]).bin([name]).AddSyst(cb, syst_name, "rateParam",
-                        ch.SystMap("era")([year],(
-                        "TMath::Max(@0,0.01)*TMath::Max(@1,0.01)/TMath::Max(@2,0.01)",
-                        syst_name_B+","+syst_name_C+","+syst_name_A
-                    ))
-                    )       
 
                 else:
                     cb.cp().process([process_name]).bin([name]).AddSyst(cb, syst_name, "rateParam", ch.SystMap("era")([year], 1.))
+
                     param = cb.GetParameter(syst_name)
 
                     # Set ABCD rate parameter values from MC or data:
@@ -231,9 +220,26 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 
                     param.set_val(max(0.01, content))
                     param.set_range(0.01, max(4, content+5.*err))
-    
-    cb.cp().process(bkg_processes).AddSyst(cb,'abcd_uncertainty',"lnN",ch.SystMap()(1.2))
-
+ 
+        # ABCD D = B*C/A
+        for ibin in range(nbins):
+            process_name = "bkg_{}_bin{}".format(category_name, ibin+1)
+            syst_name = "rate_bkg_{}_bin{}_{}".format(category_name, ibin+1, year)
+            syst_name_A = syst_name.replace("_D", "_A")
+            syst_name_B = syst_name.replace("_D", "_B")
+            syst_name_C = syst_name.replace("_D", "_C")
+            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, syst_name, "rateParam",
+                ch.SystMap("era")([year],(
+                "TMath::Max(@0,0.01)*TMath::Max(@1,0.01)/TMath::Max(@2,0.01)",
+                syst_name_B+","+syst_name_C+","+syst_name_A
+                    )
+                )
+            ) 
+            if ibin in [0, 1, 2]:
+                uncertainty_name = "unc_boosted_{}".format(year)
+            else:
+                uncertainty_name = "unc_resolved_{}".format(year)
+            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
 
     #if abs(cb.cp().signals().GetRate() - ZERO_BIN_RATE*NBINS)/ZERO_BIN_RATE*NBINS < 0.1:
         #print("Zero signal in histogram for the signal sample. Check your cuts! Skipping process: "+ signal_name +", coupling: "+ #str(coupling)+", year: "+str(year))
