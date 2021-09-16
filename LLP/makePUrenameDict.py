@@ -47,6 +47,8 @@ rename_dict_year = {
     "lumi_": "luminosity",
     "unc_boosted_": "non-closure boosted",
     "unc_resolved_": "non-closure resolved",
+    "pdf": "pdf",
+    "scale": "scale"
 }
 
 rename_dict = {}

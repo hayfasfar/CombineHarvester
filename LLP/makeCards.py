@@ -111,7 +111,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
     cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
-    systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track"]
+    systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track", "scale", "pdf"]
     systematics_correlated = []
 
     lumi_uncertainty = {"2016": 1.025, "2017": 1.023, "2018": 1.025}

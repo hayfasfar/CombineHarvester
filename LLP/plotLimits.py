@@ -71,12 +71,12 @@ lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
-coupling_dict[1.0] = ["emutau", "U_{e} : U_{#mu} : U_{#tau} = 1 : 1 : 1"]
-coupling_dict[2.0] = ["ee", "U_{e} : U_{#mu} : U_{#tau} = 1 : 0 : 0"]
-coupling_dict[7.0] = ["emu", "U_{e} : U_{#mu} : U_{#tau} = 1 : 1 : 0"]
-coupling_dict[12.0] = ["mumu", "U_{e} : U_{#mu} : U_{#tau} = 0 : 1 : 0"]
-coupling_dict[47.0] = ["etau", "U_{e} : U_{#mu} : U_{#tau} = 1 : 0 : 1"]
-coupling_dict[52.0] = ["mutau", "U_{e} : U_{#mu} : U_{#tau} = 0 : 1 : 1"]
+coupling_dict[1.0] = ["emutau", "V_{e} : V_{#mu} : V_{#tau} = 1 : 1 : 1"]
+coupling_dict[2.0] = ["ee", "V_{e} : V_{#mu} : V_{#tau} = 1 : 0 : 0"]
+coupling_dict[7.0] = ["emu", "V_{e} : V_{#mu} : V_{#tau} = 1 : 1 : 0"]
+coupling_dict[12.0] = ["mumu", "V_{e} : V_{#mu} : V_{#tau} = 0 : 1 : 0"]
+coupling_dict[47.0] = ["etau", "V_{e} : V_{#mu} : V_{#tau} = 1 : 0 : 1"]
+coupling_dict[52.0] = ["mutau", "V_{e} : V_{#mu} : V_{#tau} = 0 : 1 : 1"]
 
 n_bins = 200
 
