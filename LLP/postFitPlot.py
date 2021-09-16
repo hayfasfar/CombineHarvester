@@ -1,368 +1,302 @@
-import CombineHarvester.CombineTools.plotting as plot
+import pandas as pd
+import numpy as np
+import json
 import ROOT
+import math
+from scipy.stats import chi2
 import style
-import os
-from array import array
 
-lumi = {"2016": 35.88, "2017": 41.53, "2018": 59.68}
-fin = ROOT.TFile('CombineHarvester/LLP/cards/2016/coupling_7/HNL_majorana_all_ctau1p0e00_massHNL10p0_Vall1p177e-03/shapes.root')
-categories = [
-    "mumu_OS_displaced",
-    "ee_OS_displaced",
-    "mue_OS_displaced",
-    "emu_OS_displaced",
-    "mumu_OS_prompt",
-    "ee_OS_prompt",
-    "mue_OS_prompt",
-    "emu_OS_prompt",
-    "mumu_SS_displaced",
-    "ee_SS_displaced",
-    "mue_SS_displaced",
-    "emu_SS_displaced",
-    "mumu_SS_prompt",
-    "ee_SS_prompt",
-    "mue_SS_prompt",
-    "emu_SS_prompt",
-    #"e",
-    #"mu",
-]
+def make_pretty(s):
+    """ Make pretty the category text"""
+    s = s.replace("mumu_OS", "$\mu^{\pm}\mu$")
+    s = s.replace("mue_OS", "$\mu^{\pm}e$")
+    s = s.replace("emu_OS", "$e^{\pm}\mu^{\mp}$")
+    s = s.replace("ee_OS", "$e^{\pm}e^{\mp}$")
+    s = s.replace("mumu_SS", "$\mu^{\pm}\mu^{\pm}$")
+    s = s.replace("mue_SS", "$\mu^{\pm}e^{\pm}$")
+    s = s.replace("emu_SS", "$e^{\pm}\mu^{\pm}$")
+    s = s.replace("ee_SS", "$e^{\pm}e^{\pm}$")
+    return s
 
-categories = [category+"_D" for category in categories]
+def shorten(s):
+    """ Make pretty the category text"""
+    s = s.replace("mumu_OS", "\mu\mu")
+    s = s.replace("mue_OS", "\mu e")
+    s = s.replace("emu_OS", "e\mu")
+    s = s.replace("ee_OS", "ee")
+    s = s.replace("mumu_SS", "\mu\mu")
+    s = s.replace("mue_SS", "\mu e")
+    s = s.replace("emu_SS", "e\mu")
+    s = s.replace("ee_SS", "ee")
+    return s
 
-
-def getHist(fileName, histName):
-    rootFile = ROOT.TFile(fileName)
-    hist = rootFile.Get(histName)
-    hist = hist.Clone()
-    hist.SetDirectory(0)
+def get_hist(file_name, hist_name):
+    #print(f"Reading {hist_name} from {file_name}")
+    rootFile = ROOT.TFile(file_name)
+    hist = rootFile.Get(hist_name)
+    hist = hist.Clone(hist_name)
+    if type(hist) == ROOT.TH1F:
+        hist.SetDirectory(0)
     rootFile.Close()
     return hist
 
-
-def get_observed_expected_distributions(title, categories, hist_path="/home/hep/vc1117/LLP/histo/hists_merged"):
-    print(title)
-    n_categories = len(categories)
-
-    hist_shape = getHist(
-    os.path.join(hist_path, "{}.root".format(2016)),
-    "mumu_OS_prompt_D/ttbar"
-        )
-
-    n_bins = hist_shape.GetNbinsX()
-    n_bins_total = n_bins * n_categories
-
-    master_hist_observed = ROOT.TH1F(title, title, n_bins_total, -0.5, n_bins_total-0.5)
-    master_hist_expected = ROOT.TH1F(title, title, n_bins_total, -0.5, n_bins_total-0.5)
-
-    for i, category_name in enumerate(categories):
-        for k, bkg in enumerate(["wjets"]):
-            bkg_obs_hist_A = getHist(
-                os.path.join(hist_path,"{}.root".format(2016)),
-                    "{}/{}".format(category_name.replace("_D", "_A"), bkg)
-            )
-            bkg_obs_hist_B = getHist(
-                os.path.join(hist_path,"{}.root".format(2016)),
-                    "{}/{}".format(category_name.replace("_D", "_B"), bkg)
-            )
-            bkg_obs_hist_C = getHist(
-                os.path.join(hist_path,"{}.root".format(2016)),
-                    "{}/{}".format(category_name.replace("_D", "_C"), bkg)
-            )
-            bkg_obs_hist_D = getHist(
-                os.path.join(hist_path,"{}.root".format(2016)),
-                    "{}/{}".format(category_name, bkg)
-            )
-            if k == 0:
-                hA = bkg_obs_hist_A
-                hB = bkg_obs_hist_B
-                hC = bkg_obs_hist_C
-                hD = bkg_obs_hist_D
-            else:
-                hA.Add(bkg_obs_hist_A)
-                hB.Add(bkg_obs_hist_B)
-                hC.Add(bkg_obs_hist_C)
-                hD.Add(bkg_obs_hist_D)
-
-        for j in range(hD.GetNbinsX()):
-            bin_name = replace_name(category_name)
-            h_expected = hA * hC
-            h_expected.Divide(hB)
-            bin_index = j*n_categories+i+1
-            print(i, j, category_name, bin_index, hD.GetBinContent(j+1), hD.GetBinError(j+1))
-            print(i, j, category_name, bin_index, h_expected.GetBinContent(j+1), h_expected.GetBinError(j+1))
-
-
-            master_hist_observed.SetBinContent(bin_index, hD.GetBinContent(j+1))
-            master_hist_observed.SetBinError(bin_index, hD.GetBinError(j+1))
-            master_hist_observed.GetXaxis().SetBinLabel(bin_index, bin_name)
-            master_hist_observed.GetXaxis().LabelsOption("v")
-
-            master_hist_expected.SetBinContent(bin_index, h_expected.GetBinContent(j+1))
-            master_hist_expected.SetBinError(bin_index, h_expected.GetBinError(j+1))
-            master_hist_expected.GetXaxis().SetBinLabel(bin_index, bin_name)
-            master_hist_expected.GetXaxis().LabelsOption("v")
-    return master_hist_observed, master_hist_expected
-
-
-def replace_name(name):
-    out = ""
-    if "mumu" in name:
-        out += "#mu#mu"
-    elif "ee" in name:
-        out += "ee"
-    elif "mue" in name:
-        out += "e#mu"    
-    elif "emu" in name:
-        out += "#mue"
-    return out
-
-def expand_hist(name, title, hist_type="mc", fit_type="prefit", categories=categories):
-    print(name, title)
-
-    n_categories = len(categories)
-    print(categories[0] + "_" + fit_type + "/ttbar")
-    hist_shape = fin.Get(categories[0] + "_" + fit_type + "/ttbar")
-    n_bins = hist_shape.GetNbinsX()
-
-    n_bins_total = n_bins * n_categories
-    print(n_bins_total)
-
-    if hist_type == 'abcd':
-        master_hist = ROOT.TH1F(title, title, n_bins_total, -0.5, n_bins_total-0.5)
-
-        for i, category_name in enumerate(categories):
-            h = fin.Get(category_name + "_" + fit_type + "/bkg_" + category_name + "_bin1")
-            h2 = fin.Get(category_name + "_" + fit_type + "/bkg_" + category_name + "_bin2")
-            h.Add(h2)
-            for j in range(h.GetNbinsX()):
-                if j == 0:
-                    bin_name = replace_name(category_name)
-                if j == 1:
-                    bin_name = ""
-                master_hist.GetXaxis().SetBinLabel(i*n_bins+j+1, bin_name)
-                master_hist.GetXaxis().LabelsOption("v")
-
-                print(i, j, category_name, i*n_bins+j, h.GetBinContent(j+1), h.GetBinError(j+1))
-                master_hist.SetBinContent(i*n_bins+j+1, h.GetBinContent(j+1))
-                master_hist.SetBinError(i*n_bins+j+1, h.GetBinError(j+1))
     
-    else:
-        master_hist = ROOT.TH1F(title, title, n_bins_total, -0.5, n_bins_total-0.5)
 
-        for i, category_name in enumerate(categories):
-            h = fin.Get(category_name + "_" + fit_type + "/" + name)
-            for j in range(h.GetNbinsX()):
-                bin_name = replace_name(category_name)
+def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist, year="2016", topology="boosted"):
+    lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
 
-                print(i, j, category_name, i*n_bins+j, h.GetBinContent(j+1), h.GetBinError(j+1))
+    signal_hist.SetLineWidth(2)
+    signal_hist.SetLineColor(ROOT.kRed)
+    signal_hist.SetMarkerColor(ROOT.kRed)
 
-                master_hist.GetXaxis().SetBinLabel(i*n_bins+j+1, bin_name);
-                master_hist.GetXaxis().LabelsOption("v")
 
-                master_hist.SetBinContent(i*n_bins+j+1, h.GetBinContent(j+1))
-                master_hist.SetBinError(i*n_bins+j+1, h.GetBinError(j+1))
+    pred_hist.GetYaxis().SetTitle("Events / category")
+    pred_hist.GetYaxis().SetTitleOffset(1)
 
-    
-    return master_hist
+    pred_hist.SetLineColor(ROOT.kAzure+1)
+    pred_hist.SetMarkerColor(ROOT.kAzure+1)
+    pred_hist.SetFillColor(ROOT.kAzure+1)
 
-for fit_type in ["prefit"]:#, "postfit"]:
+    pred_hist_prefit.SetLineColor(ROOT.kAzure-2)
+    pred_hist_prefit.SetMarkerSize(0)
+    pred_hist_prefit.SetMarkerColor(ROOT.kAzure-2)
+    pred_hist_prefit.SetLineWidth(2)
+    pred_hist_prefit.SetLineStyle(2)
 
-    ROOT.PyConfig.IgnoreCommandLineOptions = True
-    ROOT.gROOT.SetBatch(ROOT.kTRUE)
+    pred_hist.SetLineWidth(2)
 
-    canvas = style.makeCanvas("cv", 1600, 800)
-    #canvas.SetLeftMargin(0.09)
-    canvas.SetRightMargin(0.15)
-    canvas.SetBottomMargin(0)
-    #canvas.SetLogy()
+    obs_hist.SetLineWidth(2)
+    pred_hist.SetMaximum(2.5*max(pred_hist.GetMaximum(), obs_hist.GetMaximum()))
 
-    pad1 = ROOT.TPad("pad1","pad1",0,0.35,1,1)
-    pad2 = ROOT.TPad("pad2","pad2",0,0.03,1,0.35)
-    pad1.SetBottomMargin(0.00001)
-    pad1.SetRightMargin(0.15)
+    pred_hist.SetMinimum(0)
+    obs_hist.SetMinimum(0)
+    residuals = obs_hist.Clone("residuals")
+    residuals.Divide(pred_hist)
+    residuals.GetXaxis().LabelsOption("v")
+
+    err_hist = pred_hist.Clone("")
+
+    cv = style.makeCanvas()
+    cv.SetBottomMargin(0.1)
+    cv.SetLeftMargin(0.13)
+    cv.SetRightMargin(0.1)
+
+    pad1 = ROOT.TPad("pad1","pad1",0,0.25,1,1)
+    pad1.SetBottomMargin(0)
+    pad1.SetLeftMargin(0.13)
+    pad1.SetRightMargin(0.1)
     pad1.SetBorderMode(0)
-    pad1.SetLogy()
 
-    pad2.SetTopMargin(0.00001)
-    pad2.SetRightMargin(0.15)
+    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.25)
+    pad2.SetTopMargin(0)
     pad2.SetBottomMargin(0.3)
+    pad2.SetLeftMargin(0.13)
+    pad2.SetRightMargin(0.1)
     pad2.SetBorderMode(0)
+
     pad1.Draw()
     pad2.Draw()
-    pad1.cd()
+
+    style.makeText(0.2, 0.95, 0.7, 0.95, topology)
+    legend = style.makeLegend(0.5, 0.74, 0.8, 0.86)
+    legend.AddEntry(obs_hist, 'Data', 'lp')
+    legend.AddEntry(pred_hist, 'Background', "lfp")
+    legend.AddEntry(pred_hist_prefit, 'Background (prefit)', "l")
+
+    legend_signal = style.makeLegend(0.15, 0.67, 0.7, 0.74)
+    legend_signal.AddEntry(signal_hist, "m_{N} = 10 GeV, c#tau_{0} = 1 mm, V_{e} = V_{#mu} = V_{#tau}")
 
 
-    ttbar = expand_hist('ttbar', 'ttbar', fit_type=fit_type)
-    #observed = expand_hist('data_obs', 'observed', hist_type='data', fit_type=fit_type)
-    #expected = expand_hist('data', 'expected', hist_type='abcd', fit_type=fit_type)
-    observed, expected = get_observed_expected_distributions(title='test', categories=categories)
-    hnl = expand_hist('HNL', 'HNL', fit_type="prefit")
+    l_OS_SS = ROOT.TLine(obs_hist.GetNbinsX()/2-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()/2-0.5, 0.6*pred_hist.GetMaximum())
+    l_prompt_displaced = ROOT.TLine(obs_hist.GetNbinsX()/6-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()/6-0.5, 0.5*pred_hist.GetMaximum())
+    l_prompt_displaced_2 = ROOT.TLine(obs_hist.GetNbinsX()*2/6-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()*2/6-0.5, 0.5*pred_hist.GetMaximum())
+    l_prompt_displaced_3 = ROOT.TLine(obs_hist.GetNbinsX()*4/6-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()*4/6-0.5, 0.5*pred_hist.GetMaximum())
+    l_prompt_displaced_4 = ROOT.TLine(obs_hist.GetNbinsX()*5/6-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()*5/6-0.5, 0.5*pred_hist.GetMaximum())
+    l_prompt_displaced.SetLineWidth(2)
+    l_prompt_displaced_2.SetLineWidth(2)
+    l_prompt_displaced_3.SetLineWidth(2)
+    l_prompt_displaced_4.SetLineWidth(2)
+    l_prompt_displaced.SetLineStyle(3)
+    l_prompt_displaced_2.SetLineStyle(3)
+    l_prompt_displaced_3.SetLineStyle(3)
+    l_prompt_displaced_4.SetLineStyle(3)
+    l_OS_SS.SetLineStyle(2)
+    l_OS_SS.SetLineWidth(3)
 
-    hnl.SetFillStyle(0)
-    hnl.SetLineColor(ROOT.kRed)
-    hnl.SetLineWidth(3)
+    text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 0.6*pred_hist.GetMaximum(), "OS")
+    text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 0.6*pred_hist.GetMaximum(), "SS")
 
-    #ef5350
-    ttbar.SetFillColor(ROOT.kRed-7)
-    ttbar.SetLineColor(ROOT.kRed-7)
+    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, 0.45*pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
+    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, 0.45*pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
 
-    expected.SetFillColor(ROOT.kAzure+1)
-    expected.SetLineColor(ROOT.kAzure+1)
+    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, 0.45*pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
+    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, 0.45*pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
 
-    #expected.SetFillColor(ROOT.TColor.GetColor(colorscale("#1976d2", 1)))
-    #expected.SetLineColor(ROOT.TColor.GetColor(colorscale("#1976d2", 0.8)))
-    exp_err = expected.Clone()
-    #exp_err.Add(ttbar)
-    exp_err.SetFillColor(ROOT.kAzure+2)
-    exp_err.SetFillStyle(3244)  # Set grey colour (12) and alpha (0.3)
-    exp_err.SetMarkerSize(0)
-    exp_err.SetMarkerColor(12)
-    hs = ROOT.THStack("hs", "hs")
+    text_displaced = ROOT.TLatex(obs_hist.GetNbinsX()*3/6-2.5, 0.45*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
+    text_displaced_2 = ROOT.TLatex(obs_hist.GetNbinsX()*6/6-2.5, 0.45*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
 
-    #ttbar.Draw('SAME')
-    #exp_err.SetFillColor(ROOT.kAzure+1)  # Set grey colour (12) and alpha (0.3)
-    #hs.Add(ttbar)
-    #hs.Add(expected)
-    expected.Draw("HIST")
+    text_prompt.SetTextAlign(22)
+    text_prompt_2.SetTextAlign(22)
+    text_medium.SetTextAlign(22)
+    text_medium_2.SetTextAlign(22)
+    text_displaced.SetTextAlign(22)
+    text_displaced_2.SetTextAlign(22)
 
-    expected.GetXaxis().SetTitle("Bin number")
-    expected.GetYaxis().SetTitle("Number of events")
-    expected.GetYaxis().SetTitleOffset(1)
-    expected.GetXaxis().SetTitleOffset(10)
-    expected.Draw("HIST")
+    text_OS.SetTextAlign(22)
+    text_SS.SetTextAlign(22)
 
-    l_merged_resolved = ROOT.TLine(expected.GetNbinsX()/2-0.5, 0, expected.GetNbinsX()/2-0.5, expected.GetMaximum() * 3)
-    l_prompt_displaced = ROOT.TLine(expected.GetNbinsX()/4-0.5, 0, expected.GetNbinsX()/4-0.5, expected.GetMaximum() * 3)
-    l_prompt_displaced_2 = ROOT.TLine(expected.GetNbinsX()*3/4-0.5, 0, expected.GetNbinsX()*3/4-0.5, expected.GetMaximum() * 3)
-    l_OS_SS = ROOT.TLine(expected.GetNbinsX()/8-0.5, 0, expected.GetNbinsX()/8-0.5, expected.GetMaximum() * 3)
-    l_OS_SS_2 = ROOT.TLine(expected.GetNbinsX()*7/8-0.5, 0, expected.GetNbinsX()*7/8-0.5, expected.GetMaximum() * 3)
-    l_OS_SS_3 = ROOT.TLine(expected.GetNbinsX()*3/8-0.5, 0, expected.GetNbinsX()*3/8-0.5, expected.GetMaximum() * 3)
-    l_OS_SS_4 = ROOT.TLine(expected.GetNbinsX()*5/8-0.5, 0, expected.GetNbinsX()*5/8-0.5, expected.GetMaximum() * 3)
-    l_merged_resolved.SetLineWidth(3)
-    l_prompt_displaced.SetLineWidth(3)
-    l_prompt_displaced_2.SetLineWidth(3)
-    l_OS_SS.SetLineWidth(2)
-    l_OS_SS_2.SetLineWidth(2)
-    l_OS_SS_3.SetLineWidth(2)
-    l_OS_SS_4.SetLineWidth(2)
-    l_prompt_displaced.SetLineStyle(2)
-    l_prompt_displaced_2.SetLineStyle(2)
+    err_hist.SetFillColor(ROOT.kAzure+2)
+    err_hist.SetFillStyle(3345)
+    err_hist.SetLineColor(ROOT.kAzure+2)
+    #legend.AddEntry(err_hist, 'stat. unc', 'f')
 
-    l_OS_SS.SetLineStyle(3)
-    l_OS_SS_2.SetLineStyle(3)
-    l_OS_SS_3.SetLineStyle(3)
-    l_OS_SS_4.SetLineStyle(3)
-
-    l_merged_resolved.Draw("")
-    l_prompt_displaced.Draw("")
-    l_prompt_displaced_2.Draw("")
-    l_OS_SS.Draw("")
-    l_OS_SS_2.Draw("")
-    l_OS_SS_3.Draw("")
-    l_OS_SS_4.Draw("")
-    observed.Draw('PSAME')
-    exp_err.Draw('E2SAME')
-
-    text_resolved = ROOT.TText(2.5, expected.GetMaximum(), "resolved")
-    text_merged = ROOT.TText(expected.GetNbinsX()/2+2, expected.GetMaximum(), "merged")
-
-    text_OS = ROOT.TText(1, 0.4*expected.GetMaximum(), "OS")
-    text_SS = ROOT.TText(expected.GetNbinsX()*1/4+1, 0.4*expected.GetMaximum(), "SS")
-    text_OS_2 = ROOT.TText(expected.GetNbinsX()*2/4+1, 0.4*expected.GetMaximum(), "OS")
-    text_SS_2 = ROOT.TText(expected.GetNbinsX()*3/4+1, 0.4*expected.GetMaximum(), "SS")
-
-    text_prompt = ROOT.TText(expected.GetNbinsX()/8+2, 0.1*expected.GetMaximum(), "prompt")
-    text_prompt_2 = ROOT.TText(expected.GetNbinsX()*3/8+2, 0.1*expected.GetMaximum(), "prompt")
-    text_prompt_3 = ROOT.TText(expected.GetNbinsX()*5/8+2, 0.1*expected.GetMaximum(), "prompt")
-    text_prompt_4 = ROOT.TText(expected.GetNbinsX()*7/8+2, 0.1*expected.GetMaximum(), "prompt")
-
-    text_displaced = ROOT.TText(2.5, 0.1*expected.GetMaximum(), "displaced")
-    text_displaced_2 = ROOT.TText(expected.GetNbinsX()*1/4+2.5, 0.1*expected.GetMaximum(), "displaced")
-    text_displaced_3 = ROOT.TText(expected.GetNbinsX()*2/4+2.5, 0.1*expected.GetMaximum(), "displaced")
-    text_displaced_4 = ROOT.TText(expected.GetNbinsX()*3/4+2.5, 0.1*expected.GetMaximum(), "displaced")
-
-    text_resolved.SetTextAlign(31)
-    text_merged.SetTextAlign(31)
-    text_prompt.SetTextAlign(31)
-    text_prompt_2.SetTextAlign(31)
-    text_prompt_3.SetTextAlign(31)
-    text_prompt_4.SetTextAlign(31)
-    text_displaced.SetTextAlign(31)
-    text_displaced_2.SetTextAlign(31)
-    text_displaced_3.SetTextAlign(31)
-    text_displaced_4.SetTextAlign(31)
-
-    text_OS.SetTextAlign(31)
-    text_OS_2.SetTextAlign(31)
-    text_SS.SetTextAlign(31)
-    text_SS_2.SetTextAlign(31)
-
-    #text.SetTextFont(43)
-    #text.SetTextSize(40)
-    #text_resolved.SetTextAngle(45)
-    text_merged.Draw("")
-    text_resolved.Draw("")
-    text_prompt.Draw("")
-    text_prompt_2.Draw("")
-    text_prompt_3.Draw("")
-    text_prompt_4.Draw("")
-    text_displaced.Draw("")
-    text_displaced_2.Draw("")
-    text_displaced_3.Draw("")
-    text_displaced_4.Draw("") 
-    text_OS.Draw("")
-    text_OS_2.Draw("")
-    text_SS.Draw("")
-    text_SS_2.Draw("")
-
-    hnl.Draw("HISTSAME")
-
-    hs.SetMaximum(hs.GetMaximum() * 3)
     pad2.cd()
-
-    #sum_hist = hs.GetStack().Last().Clone("sum")
-    residuals = observed.Clone("res")
-    residuals.Sumw2()
-    residuals.Divide(expected)#(sum_hist)
-    residuals.GetYaxis().SetTitle("data/MC")
+    residuals.GetYaxis().SetTitle("Obs/Pred")
     residuals.GetYaxis().SetTitleOffset(1)
-    residuals.GetYaxis().SetNdivisions(505)
-    residuals.GetYaxis().SetRangeUser(0, 10.1)
+    residuals.GetYaxis().SetNdivisions(504)
+    #n1 + 100*n2
+    residuals.SetMarkerColor(1)
+    residuals.SetLineColor(1)
+    residuals.GetYaxis().SetRangeUser(-0.3, 3.5)
     residuals.Draw("P")
-
-    lres = ROOT.TLine(-0.5, 1., expected.GetNbinsX()-0.5, 1.)
+    lres = ROOT.TLine(-0.5, 1., n_bins_total-0.5, 1.)
     lres.Draw("SAME")
-    '''
-    h = fin.Get(postfit_dir + '/' + category_name + '/' + name)
 
-    for j in range(h.GetN()):
-        x_lower_arr.append(float(h.GetErrorXlow(j)))
-        x_higher_arr.append(float(h.GetErrorXhigh(j)))
-        y_lower_arr.append(float(h.GetErrorYlow(j)))
-        y_higher_arr.append(float(h.GetErrorYhigh(j)))
-        h.GetPoint(j, x, y)
-        print(i, j, category_name, i*n_bins+j, float(y))
-        x_arr.append(i*n_bins+j)
-        y_arr.append(float(y))
-    x_arr = array('d', x_arr)
-    y_arr = array('d', y_arr)
-    x_lower_arr = array('d', x_lower_arr)
-    x_higher_arr = array('d', x_higher_arr)
-    y_lower_arr = array('d', y_lower_arr)
-    y_higher_arr = array('d', y_higher_arr)
-    master_hist = ROOT.TGraphAsymmErrors(n_bins_total, x_arr, y_arr, x_lower_arr, x_higher_arr, y_lower_arr, y_higher_arr)
-    '''
+    pad1.cd()
+    pred_hist.Draw("HIST")
+    err_hist.Draw("E2 SAME")
+    pred_hist_prefit.Draw("HIST SAME")
+    obs_hist.Draw("HIST P L E SAME")
+    signal_hist.Draw("HIST SAME")
+    l_prompt_displaced.Draw("SAME")
+    l_prompt_displaced_2.Draw("SAME")
+    l_prompt_displaced_3.Draw("SAME")
+    l_prompt_displaced_4.Draw("SAME")
+    l_OS_SS.Draw("SAME")
+    text_prompt.Draw("SAME")
+    text_prompt_2.Draw("SAME")
+    text_medium.Draw("SAME")
+    text_medium_2.Draw("SAME")
+    text_displaced.Draw("SAME")
+    text_displaced_2.Draw("SAME")
+    text_OS.Draw("SAME")
+    text_SS.Draw("SAME")
 
-    canvas.cd()
-
-    legend = style.makeLegend (0.87, 0.6, 0.95, 0.8)
-    legend.AddEntry(expected, 'predicted', 'F')
-    #legend.AddEntry(ttbar, 'tt', "F")
-    legend.AddEntry(observed, 'observed', "p")
-    legend.AddEntry(hnl, 'signal', "l")
+    cv.cd()
     legend.Draw("")
+    legend_signal.Draw("")
+    style.makeCMSText(0.15, 0.91, additionalText="Preliminary")
+    style.makeLumiText(0.6, 0.91, year=year, lumi=lumi[year])
 
-    style.makeCMSText(0.15, 0.97, additionalText="Simulation Preliminary", dx=0.043)
-    style.makeLumiText(0.86, 0.97, year="2016", lumi=lumi["2016"])
-    canvas.SaveAs('plot_{}.pdf'.format(fit_type))
-    canvas.SaveAs('plot_{}.png'.format(fit_type))
+    cv.SaveAs("yields/{}_{}.pdf".format(topology, year))
+    cv.SaveAs("yields/{}_{}.png".format(topology, year))
+
+
+
+categories = [
+    "mumu_OS", "ee_OS", "mue_OS", "emu_OS", 
+    "mumu_SS", "ee_SS", "mue_SS", "emu_SS"
+]
+
+n_bins_total = len(categories)*3
+
+category_names = []
+category_names_raw = []
+nbins = 6
+
+toys = True
+
+
+root_file = "fitDiagnostics.root"
+
+
+for i, year in enumerate(["2016", "2017", "2018"]):
+    hist_pred_merged = ROOT.TH1D("pred_merged", "pred_merged", n_bins_total, -0.5, n_bins_total-0.5)
+    hist_obs_merged = hist_pred_merged.Clone("obs_merged")
+    hist_pred_resolved = hist_pred_merged.Clone("pred_resolved")
+    hist_obs_resolved = hist_pred_merged.Clone("obs_resolved")
+    hist_pred_prefit_merged = hist_pred_merged.Clone("pred_merged_prefit")
+    hist_pred_prefit_resolved = hist_pred_merged.Clone("pred_resolved_prefit")
+    hist_signal_merged = hist_pred_merged.Clone("signal_merged")
+    hist_signal_resolved = hist_pred_resolved.Clone("signal_resolved")
+
+    print(year)
+    print()
+    s = """\\begin{tabular}{llllll}
+$\ell_{1}\ell_{2}$ & topology &  & \multicolumn{3}{c}{$d_{xy}^\\mathrm{sig}$ } \\\\
+\\cline{4-6}
+&          &  & $d_{xy}^\\mathrm{sig}<1$       & $1<d_{xy}^\\mathrm{sig}<10$       & $d_{xy}^\\mathrm{sig}>10$     \\\\
+\\hline"""
+    print(s)
+    for j, category in enumerate(categories):
+        category_names_raw.append(category)
+        category_names.append(make_pretty(category))
+
+        hist_pred = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/total_background")
+        hist_pred_prefit = get_hist(root_file, "shapes_prefit/ch"+str(i+1)+"_"+category+"_D/total_background")
+        hist_obs = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/data")
+        hist_signal = get_hist(root_file, "shapes_prefit/ch"+str(i+1)+"_"+category+"_D/HNL")
+
+        obs_strings_merged = []
+        pred_strings_merged = []
+        obs_strings_resolved = []
+        pred_strings_resolved = []
+
+        for idx in [1, 2, 3, 4, 5, 6]:
+            pred = hist_pred.GetBinContent(idx)
+            pred_up = hist_pred.GetBinErrorUp(idx)
+            pred_low = hist_pred.GetBinErrorLow(idx)
+            pred_string =  '${:.2f}^{{+{:.2f}}}_{{-{:.2f}}}$'.format(pred, pred_up, pred_low)
+
+            pred_prefit = hist_pred_prefit.GetBinContent(idx)
+            pred_up_prefit = hist_pred_prefit.GetBinErrorUp(idx)
+            pred_low_prefit = hist_pred_prefit.GetBinErrorLow(idx)
+
+            obs = hist_obs.GetY()
+            obs = obs[idx-1]
+            obs_up = hist_obs.GetErrorYhigh(idx)
+            obs_low = hist_obs.GetErrorYlow(idx)
+            obs_string =  '${:.2f}^{{+{:.2f}}}_{{-{:.2f}}}$'.format(obs, obs_up, obs_low)
+
+            signal = hist_signal.GetBinContent(idx)
+
+            if "SS" in category:
+                j_hack = j + 8
+            else:
+                j_hack = j
+
+            if idx in [1, 2, 3]:
+                hist_index = (idx-1)*4 + j_hack + 1
+                pred_strings_merged.append(pred_string)
+                obs_strings_merged.append(obs_string)
+                hist_pred_merged.SetBinContent(hist_index, pred)
+                hist_pred_merged.SetBinError(hist_index, pred_up)
+                hist_obs_merged.SetBinContent(hist_index, obs)
+
+                hist_pred_prefit_merged.SetBinContent(hist_index, pred_prefit)
+                hist_obs_merged.GetXaxis().SetBinLabel(hist_index, shorten(category))
+                hist_pred_merged.GetXaxis().SetBinLabel(hist_index, shorten(category))
+
+                hist_signal_merged.SetBinContent(hist_index, signal)
+
+
+            elif idx in [4, 5, 6]:
+                hist_index = (idx-4)*4 + j_hack + 1
+                pred_strings_resolved.append(pred_string)
+                obs_strings_resolved.append(obs_string)
+                hist_pred_resolved.SetBinContent(hist_index, pred)
+                hist_pred_resolved.SetBinError(hist_index, pred_up)
+                hist_obs_resolved.SetBinContent(hist_index, obs)
+                hist_pred_prefit_resolved.SetBinContent(hist_index, pred_prefit)
+                hist_obs_resolved.GetXaxis().SetBinLabel(hist_index, shorten(category))
+                hist_pred_resolved.GetXaxis().SetBinLabel(hist_index, shorten(category))
+                hist_signal_resolved.SetBinContent(hist_index, signal)
+
+
+        print("{} & boosted & pred. & {} & {} & {} \\\\").format(make_pretty(category), pred_strings_merged[0], pred_strings_merged[1], pred_strings_merged[2])
+        print("& & obs. & {} & {} & {} \\\\").format(obs_strings_merged[0], obs_strings_merged[1], obs_strings_merged[2])
+        print("& resolved & pred. & {} & {} & {} \\\\").format(pred_strings_resolved[0], pred_strings_resolved[1], pred_strings_resolved[2])
+        print("& & obs. & {} & {} & {} \\\\").format(obs_strings_resolved[0], obs_strings_resolved[1], obs_strings_resolved[2])
+    print("\end{tabular}")
+    plot_yields(hist_obs_merged, hist_pred_prefit_merged, hist_pred_merged, hist_signal_merged, year=year, topology="boosted")
+    plot_yields(hist_obs_resolved, hist_pred_prefit_resolved, hist_pred_resolved, hist_signal_resolved, year=year, topology="resolved")
