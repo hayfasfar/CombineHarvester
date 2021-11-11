@@ -7,7 +7,8 @@ import math
 from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
-YEARS = ["2016", "2017", "2018"]
+#YEARS = ["2016", "2017", "2018"]
+YEARS = ["2016"]
 COUPLINGS = [1, 2, 7, 12, 47, 52] 
 NBINS = 48
 ZERO_BIN_RATE = 0.001
@@ -58,32 +59,32 @@ eval `scramv1 runtime -sh`
 
     
             path_2016 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2016, COUPLING, proc)))
-            path_2017 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2017, COUPLING, proc)))
-            path_2018 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2018, COUPLING, proc)))
-            path_combined = os.path.join('cards/{}/coupling_{}/{}/'.format("combined", COUPLING, proc))
+            #path_2017 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2017, COUPLING, proc)))
+            #path_2018 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2018, COUPLING, proc)))
+            #path_combined = os.path.join('cards/{}/coupling_{}/{}/'.format("combined", COUPLING, proc))
 
             status_2016 = status_dict["2016"][COUPLING][proc]
-            status_2017 = status_dict["2017"][COUPLING][proc]
-            status_2018 = status_dict["2018"][COUPLING][proc]
+            #status_2017 = status_dict["2017"][COUPLING][proc]
+            #status_2018 = status_dict["2018"][COUPLING][proc]
 
             if status_2016 or status_2017 or status_2018:
-                if not os.path.exists(path_combined):
-                    os.makedirs(path_combined)
+                #if not os.path.exists(path_combined):
+                    #os.makedirs(path_combined)
 
                 combine_string = ""
                 if status_2016:
                     combine_string += path_2016+"out.txt "
-                if status_2017:
-                    combine_string += path_2017+"out.txt "
-                if status_2018:
-                    combine_string += path_2018+"out.txt "
-
-                submit_file.write(" \"")
-                submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
-                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
-                submit_file.write("\"")
-                submit_file.write("\n")
-
+                #if status_2017:
+                 #   combine_string += path_2017+"out.txt "
+                #if status_2018:
+                   # combine_string += path_2018+"out.txt "
+                
+                #submit_file.write(" \"")
+                #submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
+                #submit_file.write('''&& combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                #submit_file.write("\"")
+                #submit_file.write("\n")
+                
 
     submit_file.write(")")
     submit_file.write("\n")
@@ -111,7 +112,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
     cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
-    systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track", "scale", "pdf"]
+    systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track", "pdf" , "scale"]
     systematics_correlated = []
 
     lumi_uncertainty = {"2016": 1.025, "2017": 1.023, "2018": 1.025}
@@ -257,7 +258,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     return True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--path", default="/vols/cms/vc1117/AN-19-207/histo/limits/hists_merged")
+parser.add_argument("--path", default="/home/hep/hsfar/private/limits/histo/limits/hists_merged")
 args = parser.parse_args()
 hist_path = args.path
 
