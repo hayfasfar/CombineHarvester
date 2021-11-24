@@ -4,6 +4,7 @@ import os
 import errno
 import argparse
 import math
+from tqdm import tqdm
 from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
@@ -11,14 +12,11 @@ YEARS = ["2016", "2017", "2018"]
 COUPLINGS = [1, 2, 7, 12, 47, 52] 
 NBINS = 48
 ZERO_BIN_RATE = 0.001
-PSEUDO_DATA = 0
 NWORKERS = 16
-
 
 def get_hist(file_name, hist_name):
     rootFile = ROOT.TFile(file_name)
     hist = rootFile.Get(hist_name)
-
     try:
         hist = hist.Clone()
         hist.SetDirectory(0)
@@ -55,7 +53,6 @@ eval `scramv1 runtime -sh`
                     submit_file.write('''combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
                     submit_file.write("\"")
                     submit_file.write("\n")
-
     
             path_2016 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2016, COUPLING, proc)))
             path_2017 = os.path.expandvars(os.path.join('$PWD/cards/{}/coupling_{}/{}/'.format(2017, COUPLING, proc)))
@@ -84,7 +81,6 @@ eval `scramv1 runtime -sh`
                 submit_file.write("\"")
                 submit_file.write("\n")
 
-
     submit_file.write(")")
     submit_file.write("\n")
     submit_file.write("echo ${JOBS[$SGE_TASK_ID-1]}")
@@ -93,13 +89,10 @@ eval `scramv1 runtime -sh`
     submit_file.close()
 
 def worker(proc):
-    print("Started " + proc + ", "+str(hnl_sample_list.index(proc))+"/"+str(n_job/len(COUPLINGS)))
     for YEAR in YEARS:
         for COUPLING in COUPLINGS:
             path = os.path.join('cards/{}/coupling_{}/{}'.format(YEAR, COUPLING, proc))
             make_datacard(category_pairs, category_pairs_signal, proc, path, coupling=COUPLING, year=YEAR)
-
-    print("Finished " + str(hnl_sample_list.index(proc))+"/"+str(n_job/len(COUPLINGS)))
 
 # make a datacard for a single HNL mass/coupling scenario
 def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year="2016"):
@@ -123,6 +116,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
         cb.cp().signals().AddSyst( cb, syst+"$ERA", "shape", ch.SystMap()(1.0) )
 
     cb.cp().AddSyst(cb, "lumi_$ERA", "lnN", ch.SystMap("era")([year], lumi_uncertainty[year]))
+    cb.cp().AddSyst(cb, "displaced_lepton_$ERA", "lnN", ch.SystMap("era")([year], 1.1))
 
     cb.cp().signals().ExtractShapes(
             "{}/{}_{}.root".format(hist_path, signal_name, year),
@@ -138,22 +132,10 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     
     for _, category_name in cats:
         obs = ch.Observation()
-        # pseudo-data = sum of MC
-        if PSEUDO_DATA:
-            for i, bkg in enumerate(bkgs_mc+bkgs_abcd):
-                bkg_obs_hist = get_hist(
-                    os.path.join(hist_path,"{}.root".format(year)),
-                        "{}/{}".format(category_name, bkg)
-                )
-                if i == 0:
-                    obs_sum_hist = bkg_obs_hist.Clone(category_name)
-                else:
-                    obs_sum_hist.Add(bkg_obs_hist)
-        else: #data
-            obs_sum_hist = get_hist(
-                os.path.join(hist_path,"{}.root".format(year)),
-                    "{}/{}".format(category_name, "data")
-            )
+        obs_sum_hist = get_hist(
+            os.path.join(hist_path,"{}.root".format(year)),
+                "{}/{}".format(category_name, "data")
+        )
 
         obs_sum_hist.SetDirectory(0)
         obs.set_shape(obs_sum_hist, True)
@@ -198,22 +180,11 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 
                     param = cb.GetParameter(syst_name)
 
-                    # Set ABCD rate parameter values from MC or data:
-                    if PSEUDO_DATA:
-                        for i, bkg in enumerate(bkgs_abcd):
-                            bkg_hist = get_hist(
-                                os.path.join(hist_path,"{}.root".format(year)),
-                                    "{}/{}".format(name, bkg)
-                            )
-                            if i == 0:
-                                bkg_hist_sum = bkg_hist.Clone(name)
-                            else:
-                                bkg_hist_sum.Add(bkg_hist)
-                    else:
-                        bkg_hist_sum = get_hist(
-                            os.path.join(hist_path,"{}.root".format(year)),
-                                "{}/{}".format(name, "data")
-                        )
+                    # Set ABCD rate parameter values from  data:
+                    bkg_hist_sum = get_hist(
+                        os.path.join(hist_path,"{}.root".format(year)),
+                            "{}/{}".format(name, "data")
+                    )
 
                     content = bkg_hist_sum.GetBinContent(ibin+1)
                     err = math.sqrt(bkg_hist_sum.GetBinContent(ibin+1))
@@ -239,11 +210,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                 uncertainty_name = "unc_boosted_{}".format(year)
             else:
                 uncertainty_name = "unc_resolved_{}".format(year)
-            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
-
-    #if abs(cb.cp().signals().GetRate() - ZERO_BIN_RATE*NBINS)/ZERO_BIN_RATE*NBINS < 0.1:
-        #print("Zero signal in histogram for the signal sample. Check your cuts! Skipping process: "+ signal_name +", coupling: "+ #str(coupling)+", year: "+str(year))
-        #return False
+            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -270,25 +237,22 @@ categories = [
 
 hnl_sample_list = []
 n_job=0
+
 for proc in os.listdir(hist_path):
     if "HNL" not in proc:
         continue
     if "_pt20_" not in proc and proc.replace("_all_", "_pt20_") in os.listdir(hist_path):
-        print("Skipping "+proc+", higher stat. sample exists")
+        print("Skipping "+proc+", special higher statistics sample exists")
         continue
     if "_2016" in proc:
         hnl_sample_list.append(proc.replace("_2016.root", ""))
         n_job += len(COUPLINGS)
 
-
-# Make cards in parallel 
-# Delete the old directory
 try:
     os.mkdir("cards")
 except OSError as e:
     if e.errno == errno.EEXIST:
         raise OSError('Directory "cards" already created.')
-
 
 # Count the number of jobs
 n_categories = len(categories)
@@ -303,9 +267,14 @@ for index1, category_name in enumerate(categories):
         if region == "D":
             category_pairs_signal.append(pair)
         category_pairs.append(pair)
-pool = Pool(NWORKERS)
-pool.map(worker, hnl_sample_list)
 
+
+pool = Pool(NWORKERS)
+progress_bar = tqdm(total=len(hnl_sample_list))
+print
+results = tqdm(pool.imap(worker, hnl_sample_list), total=len(hnl_sample_list))
+tuple(results)  # fetch the lazy results
+print
 
 status_dict = {}
 for year in YEARS:
@@ -317,5 +286,6 @@ for year in YEARS:
                 status_dict[year][coupling][proc] = True
             else:
                 status_dict[year][coupling][proc] = False
+
 # Make sge submission script
 make_sge_script(hnl_sample_list)

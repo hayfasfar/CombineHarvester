@@ -48,7 +48,8 @@ rename_dict_year = {
     "unc_boosted_": "non-closure boosted",
     "unc_resolved_": "non-closure resolved",
     "pdf": "pdf",
-    "scale": "scale"
+    "scale": "scale",
+    "displaced_lepton_": "displaced lepton"
 }
 
 rename_dict = {}
