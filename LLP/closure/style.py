@@ -50,7 +50,7 @@ ROOT.gStyle.SetHatchesLineWidth(2)
 
 ROOT.gStyle.SetTitleColor(1, "XYZ")
 ROOT.gStyle.SetTitleFont(43, "XYZ")
-ROOT.gStyle.SetTitleSize(33, "XYZ")
+ROOT.gStyle.SetTitleSize(29, "XYZ")
 ROOT.gStyle.SetTitleXOffset(1.135)
 ROOT.gStyle.SetTitleOffset(1.32, "YZ")
 
@@ -184,10 +184,10 @@ def makeCMSText(x1,y1,additionalText=None,dx=0.088):
     
 def makeLumiText(x1,y1,lumi="35.9",year="2016"):
     pText = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
-    pText.AddText("%s fb#lower[-0.8]{#scale[0.7]{-1}} (%s)" % (lumi, year))
+    pText.AddText("%sfb#lower[-0.8]{#scale[0.7]{-1}} (%s)" % (lumi, year))
     pText.SetTextFont(63)
     pText.SetTextSize(31)
-    pText.SetTextAlign(32)
+    pText.SetTextAlign(13)
     rootObj.append(pText)
     pText.Draw("Same")
     return pText
