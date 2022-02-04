@@ -1,6 +1,8 @@
 import ROOT
 ROOT.gROOT.SetBatch(True)
 import style
+ROOT.gStyle.SetErrorX(0)
+
 import json
 
 def make_pretty(s):
@@ -44,7 +46,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     colour_signal_2 = "#ff7d00"
     colour_prefit = "#15616d"
 
-    lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
+    lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 
     signal_hist_1.SetLineWidth(3)
     signal_hist_1.SetLineColor(ROOT.TColor.GetColor(colour_signal_1))
@@ -132,8 +134,9 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
 
     legend_signal = style.makeLegend(0.14, 0.76, 0.5, 0.87)
     legend_signal.SetTextSize(19)
-    legend_signal.AddEntry(signal_hist_1, "m_{N} = 2 GeV, c#tau_{0} = 100 mm")
-    legend_signal.AddEntry(signal_hist_2, "m_{N} = 10 GeV, c#tau_{0} = 1 mm")
+    legend_signal.AddEntry(signal_hist_1, "m#lower[0.3]{#scale[0.7]{N}} = 2 GeV, c#tau#lower[0.3]{#scale[0.7]{0}} = 100 mm")
+    #legend_signal.AddEntry(signal_hist_2, "m#lower[0.3]{#scale[0.7]{N}} = 8 GeV, c#tau#lower[0.3]{#scale[0.7]{0}} = 0.1 mm")
+    legend_signal.AddEntry(signal_hist_2, "m#lower[0.3]{#scale[0.7]{N}} = 10 GeV, c#tau#lower[0.3]{#scale[0.7]{0}} = 1 mm")
 
 
     l_OS_SS = ROOT.TLine(obs_hist.GetNbinsX()/2-0.5, obs_hist.GetMinimum(), obs_hist.GetNbinsX()/2-0.5, 0.6*pred_hist.GetMaximum())
@@ -225,7 +228,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     legend.Draw("")
     legend_signal.Draw("")
     #style.makeCMSText(0.15, 0.91, additionalText="Preliminary")
-    style.makeLumiText(0.55, 0.91, year=year, lumi=lumi[year])
+    style.makeLumiText(0.9, 0.96, year=year, lumi=lumi[year])
 
     cv.SaveAs("yields/{}_{}.pdf".format(topology, year))
     cv.SaveAs("yields/{}_{}.png".format(topology, year))
@@ -242,6 +245,7 @@ category_names_raw = []
 
 root_file = "fitDiagnostics.root"
 signal = "HNL_majorana_all_ctau1p0e02_massHNL2p0_Vall9p078e-03"
+#signal_2 = "HNL_majorana_all_ctau1p0e-01_massHNL8p0_Vall6p702e-03"
 signal_2 = "HNL_majorana_all_ctau1p0e00_massHNL10p0_Vall1p177e-03"
 
 signal_hist_path = "/vols/cms/vc1117/AN-19-207/histo/limits/hists_merged/"
