@@ -1,4 +1,8 @@
-*out.txt
 *.root
+*.txt
+*.out
+*.err
 log
 jsons
+jsons_unblinded
+csv

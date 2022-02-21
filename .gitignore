@@ -20,8 +20,17 @@ __init__.py
 *.root
 *.png
 *.pdf
+*.out
 
 docs/html
 
 LLP/cards
 .*DS_Store
+
+log
+runCombine.sh
+jsons
+csv
+
+rename.json
+impacts.json
