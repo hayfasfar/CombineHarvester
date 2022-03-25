@@ -97,11 +97,11 @@ def worker(proc):
 # make a datacard for a single HNL mass/coupling scenario
 def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year="2016"):
     cb = ch.CombineHarvester()
-    bkgs_mc = []
-    bkgs_abcd = ["wjets", "dyjets", "qcd", "vgamma", "topbkg"]
+    #bkgs_mc = []
+    #bkgs_abcd = ["wjets", "dyjets", "qcd", "vgamma", "topbkg"]
     signal = ["HNL"]
 
-    cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
+    #cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
     cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
     systematics_uncorrelated = [
@@ -128,12 +128,20 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             "$BIN/$PROCESS_coupling_{}".format(coupling),
             "$BIN/$PROCESS_coupling_{}_$SYSTEMATIC".format(coupling)
             )
+    
+    bbFactory = ch.BinByBinFactory()
+    bbFactory.SetAddThreshold(0.2)
+    bbFactory.SetFixNorm(True)
+    #bbFactory.SetMergeThreshold(0.5)
+    #bbFactorySetMergeZeroBins(True)
+    #bbFactory.SetMergeSaturatedBins(True)
+    bbFactory.SetPoissonErrors(True)
+    bbFactory.SetPattern("bb_$BIN_$ERA_bin_$#")
+    #bbFactory.MergeBinErrors(cb.cp().backgrounds())
 
-    cb.cp().backgrounds().ExtractShapes(
-            "{}/{}.root".format(hist_path, year),
-            "$BIN/$PROCESS",
-            "$BIN/$PROCESS_$SYSTEMATIC"
-            )
+    #add only for category D
+    bbFactory.AddBinByBin(cb.cp().bin(map(lambda x: x[1], filter(lambda x: x[1].endswith("_D"), cats))).process(signal), cb)
+    
     
     for _, category_name in cats:
         obs = ch.Observation()
