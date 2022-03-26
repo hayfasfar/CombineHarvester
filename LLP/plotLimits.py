@@ -67,7 +67,14 @@ json_path = "jsons"
 
 K_FACTOR = 1.1
 
-lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
+blinded = True
+
+limit_var_list = ["exp0", "exp+1", "exp+2", "exp-1", "exp-2"]
+
+if not blinded:
+    limit_var_list += ["obs"]
+
+lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
@@ -100,7 +107,7 @@ for year in years:
             masses = []
             couplings = []
             sigma_dict = {}
-            for exp_var in ["exp0", "exp+1", "exp+2", "exp-1", "exp-2", "theory"]:
+            for exp_var in limit_var_list+["theory"]:
                 sigma_dict[exp_var] = []
 
             for f in os.listdir(json_path):
@@ -126,15 +133,18 @@ for year in years:
 
                 sigma_dict["theory"].append(xsec)
 
-                for exp_var in ["exp0", "exp+1", "exp+2", "exp-1", "exp-2"]:
+                
+
+                for exp_var in limit_var_list:
                     sigma_dict[exp_var].append(xsec_dict[exp_var])
 
                 masses.append(mass)
                 couplings.append(coupling)
 
-            df = pd.DataFrame(list(zip(masses, couplings, sigma_dict["theory"], sigma_dict["exp0"], sigma_dict["exp+1"],
-             sigma_dict["exp+2"], sigma_dict["exp-1"], sigma_dict["exp-2"])), 
-                        columns =['mass', 'coupling', 'theory', 'exp0', 'exp+1', 'exp+2', 'exp-1', 'exp-2'])
+            df = pd.DataFrame.from_dict(sigma_dict)
+            df['mass'] = masses
+            df['coupling'] = couplings
+    
             npoints = len(df)
             mass_coupling_pair = np.array([df['mass'], np.log10(df['coupling'])]).T
             log_theory_points = np.log10(np.array(df['theory']))
@@ -143,6 +153,9 @@ for year in years:
             log_expected_points_minus = np.log10(np.array(df['exp-1']))
             log_expected_points_plus_two = np.log10(np.array(df['exp+2']))
             log_expected_points_minus_two = np.log10(np.array(df['exp-2']))
+
+            if not blinded:
+                log_observed_points = np.log10(np.array(df['obs']))
 
             df.to_csv("csv/limit_{}_coupling_{}_{}.csv".format(hnl_type, scenario, year))
             n_bins = 200
@@ -156,6 +169,10 @@ for year in years:
             results_plus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_plus_two, (grid_x, grid_y), method=fit_method)
             results_minus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_minus_two, (grid_x, grid_y), method=fit_method)
 
+            if not blinded:
+                results_obs = interpolate.griddata(mass_coupling_pair, log_observed_points, (grid_x, grid_y), method=fit_method)
+
+
             hist_mu = ROOT.TH2D("mu"+hnl_type+str(scenario), "mu", n_bins-1, mass_range, n_bins-1, coupling_range)
             crossing_points = []
             masses_at_crossing_points = []
@@ -164,16 +181,20 @@ for year in years:
             errors_up_two = []
             errors_down_two = []
 
-
             yellow = ROOT.TGraph(2*n_bins)    # yellow band
             green = ROOT.TGraph(2*n_bins)     # green band
             median = ROOT.TGraph(n_bins)      # median line 
-
+            if not blinded:
+                observed = ROOT.TGraph(n_bins)    
 
             for i in range(n_bins):
                 mass = mass_range[i]
                 coupling_values = []
                 mu_values = []
+                
+                if not blinded:
+                    mu_obs_values = []
+
                 mu_plus_values = []
                 mu_minus_values = []
                 mu_plus_two_values = []
@@ -182,6 +203,10 @@ for year in years:
                 for j in range(n_bins):
                     coupling_values.append(log_coupling_range[j])
                     exp = results[i, j]
+
+                    if not blinded:
+                        obs = results_obs[i, j]
+
                     exp_plus = results_plus[i, j]
                     exp_minus = results_minus[i, j]
                     exp_plus_two = results_plus_two[i, j]
@@ -189,6 +214,10 @@ for year in years:
                     theory = results_theory[i, j]
 
                     mu_values.append(get_mu(theory, exp))
+
+                    if not blinded:
+                        mu_obs_values.append(get_mu(theory, obs))
+
                     mu_plus_values.append(get_mu(theory, exp_plus))
                     mu_minus_values.append(get_mu(theory, exp_minus))
                     mu_plus_two_values.append(get_mu(theory, exp_plus_two))
@@ -198,6 +227,10 @@ for year in years:
 
     
                 crossing_point = np.power(10, interpolate_point(coupling_values, mu_values))
+
+                if not blinded:
+                    crossing_point_observed = np.power(10, interpolate_point(coupling_values, mu_obs_values))
+
                 crossing_point_plus = np.power(10, interpolate_point(coupling_values, mu_plus_values))
                 crossing_point_minus = np.power(10, interpolate_point(coupling_values, mu_minus_values))
                 crossing_point_plus_two = np.power(10, interpolate_point(coupling_values, mu_plus_two_values)) 
@@ -205,53 +238,70 @@ for year in years:
                 yellow.SetPoint(    i,    mass, crossing_point_plus_two ) # + 2 sigma
                 green.SetPoint(     i,    mass, crossing_point_plus ) # + 1 sigma
                 median.SetPoint(    i,    mass, crossing_point ) # median
+
+                if not blinded:
+                    observed.SetPoint(    i,    mass, crossing_point_observed ) # observed
+
                 green.SetPoint(  2*n_bins-1-i, mass, crossing_point_minus ) # - 1 sigma
                 yellow.SetPoint( 2*n_bins-1-i, mass, crossing_point_minus_two ) # - 2 sigma
 
-#the bands should be labelled "1 s.d." or "1 std deviation" etc, and NOT "1 sigma" etc.;
-
-
-            # cv = style.makeCanvas()
-            # cv.SetRightMargin(0.2)
-            # cv.Draw("")
-
-
-
-            # median.Draw('Lsame')
-            # points_graph = ROOT.TGraph(npoints, array('d', mass_coupling_pair.T[0]), array('d',np.power(10, mass_coupling_pair.T[1])))
-            # points_graph.SetMarkerStyle(33)
-            # points_graph.SetMarkerSize(1)
-
-            # # graph.SetLineColor(ROOT.kBlack)
-            # # graph.SetMarkerColor(ROOT.kBlack)
-            # # graph.SetFillColorAlpha(ROOT.kBlack, 0.3)
-            # # graph.SetLineWidth(2)
-
-            # # graph.Draw("SAMEC3")
-            # points_graph.Draw("P SAME")
-            # style.makeText(0.18, 0.7, 0.2, 0.7, coupling_title+", "+hnl_type.capitalize())
-            # style.makeCMSText(0.18, 0.87, additionalText="Simulation Preliminary")
-            # style.makeLumiText(0.18, 0.8, year=year, lumi=lumi[year])
-            # cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
-            # cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.root".format(hnl_type, scenario, year))
-            # cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
+            points_graph = ROOT.TGraph(npoints, array('d', mass_coupling_pair.T[0]), array('d',np.power(10, mass_coupling_pair.T[1])))
+            points_graph.SetMarkerStyle(33)
+            points_graph.SetMarkerSize(1)
+            points_graph.SetMarkerColor(0)
 
             cv = style.makeCanvas()
-            cv.SetRightMargin(0.1)
+            cv.SetRightMargin(0.1) # 0.1
             cv.SetLogy()
             cv.SetLogx()
-            #cv.SetLogz()
+            cv.SetLogz()
             cv.Draw("")
 
-            hist_mu.GetXaxis().SetTitle("m_{N} [GeV]")
-            hist_mu.GetYaxis().SetTitle("|V_{lN}|^{2}")
-            hist_mu.GetZaxis().SetTitle("#sigma/#sigma_{th}")
-            hist_mu.Draw("AXIS")
+            hist_mu.GetXaxis().SetTitle("m#lower[0.3]{#scale[0.7]{N}} (GeV)")
+            hist_mu.GetYaxis().SetTitle("|V#lower[0.3]{#scale[0.7]{#font[12]{l}N}}|#lower[-0.7]{#scale[0.7]{2}}")
+            #hist_mu.GetZaxis().SetTitle("#sigma/#sigma_{th}")
+            hist_mu.Draw("COLZ")
             hist_mu.SetMaximum(1e3)
 
-            #cv.SetLogy()
-            #cv.SetLogx()
-            #cv.SetLogz()
+            points_graph.Draw("P SAME")
+
+            median.SetLineWidth(2)
+
+            if not blinded:
+                observed.SetLineColor(ROOT.kRed)
+                observed.SetLineWidth(2)
+
+            median.Draw('Lsame')
+
+            if not blinded:
+                observed.Draw('Lsame')
+
+            median.SetTitle("")
+
+            leg = style.makeLegend(0.16, 0.5, 0.5, 0.77)
+            leg.AddEntry(median, "expected",'L')
+
+            if not blinded:
+                leg.AddEntry(observed, "observed",'L')
+
+            leg.Draw()
+
+            text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize()+ " HNL")
+            text.SetTextFont(63)
+            text.SetTextSize(31)
+            #Text(0.18, 0.89, additionalText="Simulation Preliminary")
+            style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
+
+            cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
+            cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
+
+            hist_mu.Draw("AXIS")
+            leg = style.makeLegend(0.16, 0.4, 0.5, 0.77)
+            leg.SetTextSize(24)
+
+            if not blinded:
+                leg.AddEntry(observed, "observed",'L')
+            leg.AddEntry(median, "expected",'L')
 
             yellow.SetFillColor(ROOT.kOrange)
             yellow.SetLineColor(ROOT.kOrange)
@@ -260,26 +310,18 @@ for year in years:
             green.SetFillColor(ROOT.kGreen+1)
             green.SetLineColor(ROOT.kGreen+1)
             green.SetFillStyle(1001)
-        
-            median.SetLineColor(1)
-            median.SetLineWidth(2)
-            median.SetLineStyle(2)
 
             yellow.Draw('Fsame')
             green.Draw('Fsame')
-            median.Draw('Lsame')
+            median.Draw("Lsame")
 
-            median.SetTitle("")
+            if not blinded:
+                observed.Draw("Lsame")
 
-            leg = style.makeLegend(0.16, 0.5, 0.5, 0.77)
-            leg.AddEntry(median, "expected",'L')
             leg.AddEntry(green, "#pm 1 std. deviation",'f')
             leg.AddEntry(yellow,"#pm 2 std. deviation",'f')
-            leg.Draw()
 
-            style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
-            style.makeCMSText(0.18, 0.89, additionalText="Simulation Preliminary")
-            style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
+            leg.Draw("same")
 
             # ATLAS Results:
             # Table 3: displaced HNL, Vmu , Dirac
@@ -303,13 +345,11 @@ for year in years:
                     hist_displaced_dirac.Draw("SAME")
                     leg.AddEntry(hist_displaced_dirac, "ATLAS displaced")
 
-                else:
+                elif hnl_type == "majorana":
                     hist_displaced_majorana.Draw("SAME")
                     leg.AddEntry(hist_displaced_majorana, "ATLAS displaced")
-
-                hist_prompt.Draw("SAME")
-
-                leg.AddEntry(hist_prompt, "ATLAS prompt")
+                    hist_prompt.Draw("SAME")
+                    leg.AddEntry(hist_prompt, "ATLAS prompt")
 
                 mass_values_lhcb = np.asarray([5., 10., 15., 20., 30., 50.])
                 x_errors_lhcb = np.zeros(6)
@@ -347,7 +387,6 @@ for year in years:
                         0.0003602391,
                         0.0002851714
                     ])
-                print(mass_values_lhcb, coupling_values_lhcb)
                 graph_lhcb = ROOT.TGraphErrors(6,mass_values_lhcb,coupling_values_lhcb, x_errors_lhcb,y_errors_lhcb)
                 graph_lhcb.SetLineColor(ROOT.kRed)
                 graph_lhcb.SetLineWidth(3)
@@ -356,62 +395,63 @@ for year in years:
                 graph_lhcb.Draw("SAME L")
                 leg.AddEntry(graph_lhcb, "LHCb")
 
-            elif scenario == 2:
-                hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
-                hist_prompt.SetLineStyle(3)
-                hist_prompt.SetLineWidth(3)
-                hist_prompt.Draw("SAME")
+                if hnl_type == "majorana":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 15., 15., 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-4, 2e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 3e-7, 3.5e-7, 6e-7, 1e-6, 2e-6, 6e-6, 4e-5, 1.5e-4, 1e-3, 2.5e-3])
+                elif hnl_type == "dirac":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 16.5, 16.5, 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1.7e-4, 2e-5, 7e-6, 2.7e-6, 1.5e-6, 7e-7, 5e-7, 4e-7, 3e-7, 3e-7, 4e-7, 1e-6, 2.5e-6, 1.5e-5, 1.5e-4, 4e-4, 2e-3, 5e-3])
+
+                graph_exo_20_009 = ROOT.TGraph(len(mass_values_exo_20_009),mass_values_exo_20_009,coupling_values_exo_20_009)
+                graph_exo_20_009.SetLineColor(ROOT.kViolet)
+                graph_exo_20_009.SetLineWidth(3)
+                graph_exo_20_009.SetMarkerSize(0)
+                graph_exo_20_009.SetLineStyle(5)
+                graph_exo_20_009.Draw("SAME L")
+                leg.AddEntry(graph_exo_20_009, "EXO-20-009")
+                if hnl_type == "dirac":
+                    leg.AddEntry(median, "", "")
+
+            if scenario == 2:
+                if hnl_type == "majorana":
+                    hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
+                    hist_prompt.SetLineStyle(3)
+                    hist_prompt.SetLineWidth(3)
+                    hist_prompt.Draw("SAME")
+
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 13., 13., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 2.6e-5, 1.2e-5, 6.3e-6, 1.6e-6, 1.2e-6, 9.3e-7, 8.5e-7, 8.8e-7, 1e-6, 6.5e-6, 3.1e-5, 1.4e-4, 8e-4, 2.3e-3])
+
+                elif hnl_type == "dirac":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 3.2e-5, 1.5e-5, 7.4e-6, 2e-6, 1.5e-6, 1e-6, 9e-7, 8.7e-7, 1e-6, 1e-5, 8.7e-5, 3.5e-4, 2e-3, 5e-3])
+
                 leg.AddEntry(hist_prompt, "ATLAS 3l, prompt")
+
+                graph_exo_20_009 = ROOT.TGraph(len(mass_values_exo_20_009),mass_values_exo_20_009,coupling_values_exo_20_009)
+                graph_exo_20_009.SetLineColor(ROOT.kViolet)
+                graph_exo_20_009.SetLineWidth(3)
+                graph_exo_20_009.SetMarkerSize(0)
+                graph_exo_20_009.SetLineStyle(5)
+                graph_exo_20_009.Draw("SAME L")
+                leg.AddEntry(graph_exo_20_009, "EXO-20-009")
+
                 leg.AddEntry(median, "", "")
                 leg.AddEntry(median, "", "")
+                if hnl_type == "dirac":
+                    leg.AddEntry(median, "", "")
+
             else:
                 leg.AddEntry(median, "", "")
                 leg.AddEntry(median, "", "")
                 leg.AddEntry(median, "", "")           
+                leg.AddEntry(median, "", "")           
 
-            # LHCB results:
-    
+            text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
+            text.SetTextFont(63)
+            text.SetTextSize(31)
+            style.makeCMSText(0.18, 0.89)#, additionalText="Simulation Preliminary")
+            style.makeLumiText(0.9, 0.95, year=year, lumi=lumi[year])
+
             cv.SaveAs("limits/{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
-            cv.SaveAs("limits/{}_coupling_{}_{}.root".format(hnl_type, scenario, year))
             cv.SaveAs("limits/{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
-            # if hnl_type == 'majorana':
-            #     graph_majorana = graph.Clone("majorana")
-            # elif hnl_type == 'dirac':
-            #     graph_dirac = graph.Clone("dirac")
-               
-        # cv = style.makeCanvas()
-        # cv.Draw("")
-        # cv.SetLogy()
-        # cv.SetLogx()
-        # cv.SetLogz()
-        # graph_majorana.Draw("AC3")
-        # graph_majorana.GetXaxis().SetTitle("m_{N} [GeV]")
-        # graph_majorana.GetYaxis().SetTitle("|V_{lN}|^{2}")
-
-        # graph_majorana.GetXaxis().SetLimits(1, 20.)
-        # graph_majorana.SetMinimum(1e-7)
-        # graph_majorana.SetMaximum(1e3)
-        # graph_majorana.GetXaxis().SetMoreLogLabels()
-
-        # graph_majorana.SetLineColor(ROOT.kAzure)
-        # graph_majorana.SetMarkerColor(ROOT.kAzure)
-        # graph_majorana.SetFillColorAlpha(ROOT.kAzure, 0.3)
-
-        # graph_dirac.SetLineColor(ROOT.kOrange)
-        # graph_dirac.SetMarkerColor(ROOT.kOrange)
-        # graph_dirac.SetFillColorAlpha(ROOT.kOrange, 0.3)
-
-        # graph_dirac.Draw("SAMEC3")
-        # graph_majorana.Draw("SAME C3")
-        # points_graph.Draw("SAME P")
-
-        # leg = style.makeLegend(0.16, 0.47, 0.5, 0.67)
-        # leg.AddEntry(graph_majorana, "Majorana", "lpf")
-        # leg.AddEntry(graph_dirac, "Dirac", "lpf")
-
-
-        # leg.Draw("SAME")
-        # style.makeText(0.18, 0.7, 0.2, 0.7, coupling_title)
-        # style.makeCMSText(0.18, 0.87, additionalText="Simulation Preliminary")
-        # style.makeLumiText(0.18, 0.8, year=year, lumi=lumi[year])
-        # cv.SaveAs("limits/limit_coupling_{}_{}.pdf".format(scenario, year))
