@@ -26,14 +26,11 @@ def get_hist(file_name, hist_name):
         return hist
 
 
-hist_path = "/home/hep/hsfar/private/limits/histo/abcd/lowMass_relaxed"
-#hist_path = "/home/hep/vc1117/cms/AN-19-207/histo/abcd"
+hist_path = "/vols/cms/vc1117/AN-19-207/histo/abcd"
 
 categories = [
-    "mumu_OS", 
-    "mumu_SS",
-    "ee_OS", 
-    "ee_SS",
+    "mumu_OS", "mumu_SS",
+    "ee_OS", "ee_SS",
     "mue_OS", "mue_SS",
     "emu_OS", "emu_SS",
 ]
@@ -71,9 +68,8 @@ for topology in ["boosted", "resolved"]:
                 for ibin in range(3):
                     proc = ch.Process()
                     process_name = "bkg_{}_bin{}".format(name, ibin+1)
-                    #print "process name " , process_name 
+
                     syst_name = "rate_bkg_{}_bin{}_{}_{}".format(name, ibin+1, topology, year)
-                    #print "syst_name " , syst_name
 
                     proc.set_process(process_name)
                     proc.set_bin(name)
@@ -87,8 +83,6 @@ for topology in ["boosted", "resolved"]:
                     proc.set_shape(hist, True)
                     cb.InsertProcess(proc)
 
-                    ### set ABCD rate parameter values from data. 
-
                     if region != "D":
                         cb.cp().process([process_name]).bin([name]).AddSyst(cb, syst_name, "rateParam", ch.SystMap("era")([year], 1.))
 
@@ -97,13 +91,12 @@ for topology in ["boosted", "resolved"]:
                             os.path.join(hist_path,"{}{}.root".format(year, topology)),
                                 "{}/{}".format(category_name, "data"+region)
                         )
-                        
+
                         content = obs_hist.GetBinContent(ibin+1)
                         err = math.sqrt(obs_hist.GetBinContent(ibin+1))
-                        #print "content is , " , content , "  error is : ", err 
+
                         param.set_val(max(0.01, content))
                         param.set_range(0.01, max(4, content+5.*err))
-                        #print "weird max value , " , max(4 , content+5. *err)
             if region == "D":
                 for ibin in range(3):
                     process_name = "bkg_{}_bin{}".format(name, ibin+1)
@@ -119,19 +112,21 @@ for topology in ["boosted", "resolved"]:
                         )
                 ) 
                     # 15 % non-closure uncert
-                    cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "lnN", ch.SystMap("era")([year], 3.))
+
+                    cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "lnN", ch.SystMap("era")([year], 1.15))
                     # for determining uncertainy
                     #cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "rateParam", ch.SystMap("era")([year], 1.))
                     #param = cb.GetParameter("uncertainty"+topology+year)
-                    #print "parameter is ", param
                     #param.set_range(0, 2)
 
         cb.InsertProcess(proc_signal)
                 
-        #cb.PrintAll()
+
+        cb.PrintAll()
         f = ROOT.TFile.Open(os.path.join("closure", year+topology+".root"), "RECREATE")
         cb.cp().WriteDatacard(
             os.path.join("closure", year+topology+".txt"),
             f
         )
+
         f.Close()

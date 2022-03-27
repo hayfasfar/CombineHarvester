@@ -1,6 +1,8 @@
 import ROOT
 ROOT.gROOT.SetBatch(True)
 import style
+ROOT.gStyle.SetErrorX(0)
+
 import json
 
 def make_pretty(s):
@@ -44,7 +46,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     colour_signal_2 = "#13eb7b"
     colour_prefit = "#696767"
 
-    lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
+    lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 
     signal_hist_1.SetLineWidth(3)
     signal_hist_1.SetLineColor(ROOT.TColor.GetColor(colour_signal_1))
@@ -129,6 +131,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     legend.AddEntry(obs_hist, 'Data', 'lp')
     legend.AddEntry(pred_hist, 'Background', "lf")
     legend.AddEntry(pred_hist_prefit, 'Background (prefit)', "l")
+
 
     legend_signal = style.makeLegend(0.14, 0.76, 0.5, 0.87)
     legend_signal.SetTextSize(19)
@@ -225,7 +228,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     legend.Draw("")
     legend_signal.Draw("")
     #style.makeCMSText(0.15, 0.91, additionalText="Preliminary")
-    style.makeLumiText(0.55, 0.91, year=year, lumi=lumi[year])
+    style.makeLumiText(0.9, 0.96, year=year, lumi=lumi[year])
 
     #cv.SaveAs("yields/unblind_{}_{}.pdf".format(topology, year))
     #cv.SaveAs("yields/unblind_{}_{}.png".format(topology, year))

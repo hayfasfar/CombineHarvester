@@ -100,13 +100,19 @@ def worker(proc):
 # make a datacard for a single HNL mass/coupling scenario
 def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year="2016"):
     cb = ch.CombineHarvester()
-    bkgs_mc = []
-    bkgs_abcd = ["wjets", "dyjets", "qcd", "vgamma", "topbkg"]
+    #bkgs_mc = []
+    #bkgs_abcd = ["wjets", "dyjets", "qcd", "vgamma", "topbkg"]
     signal = ["HNL"]
-    cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
-    cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
-    systematics_uncorrelated = ["pu", "unclEn", "jesTotal", "jer", "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", "displaced_track", "scale", "pdf"]
+    #cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
+    cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True)
+
+    systematics_uncorrelated = [
+        "pu", "unclEn", "jesTotal", "jer", 
+        "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", 
+        "tagger_q", "tagger_qmu", "tagger_qe", 
+        "scale", "pdf"
+    ]
     systematics_correlated = []
 
     lumi_uncertainty = {"2016": 1.025, "2017": 1.023, "2018": 1.025}
@@ -125,12 +131,20 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             "$BIN/$PROCESS_coupling_{}".format(coupling),
             "$BIN/$PROCESS_coupling_{}_$SYSTEMATIC".format(coupling)
             )
+    
+    bbFactory = ch.BinByBinFactory()
+    bbFactory.SetAddThreshold(0.2)
+    bbFactory.SetFixNorm(True)
+    #bbFactory.SetMergeThreshold(0.5)
+    #bbFactorySetMergeZeroBins(True)
+    #bbFactory.SetMergeSaturatedBins(True)
+    bbFactory.SetPoissonErrors(True)
+    bbFactory.SetPattern("bb_$BIN_$ERA_bin_$#")
+    #bbFactory.MergeBinErrors(cb.cp().backgrounds())
 
-    cb.cp().backgrounds().ExtractShapes(
-            "{}/{}.root".format(hist_path, year),
-            "$BIN/$PROCESS",
-            "$BIN/$PROCESS_$SYSTEMATIC"
-            )
+    #add only for category D
+    bbFactory.AddBinByBin(cb.cp().bin(map(lambda x: x[1], filter(lambda x: x[1].endswith("_D"), cats))).process(signal), cb)
+    
     
     for _, category_name in cats:
         obs = ch.Observation()
@@ -268,9 +282,8 @@ for proc in os.listdir(hist_path):
 try:
     os.mkdir("cards")
 except OSError as e:
-    if e.errno == errno.EEXIST:
-        raise OSError('Directory "cards" already created.')
-
+    pass
+    
 # Count the number of jobs
 n_categories = len(categories)
 category_pairs = []
@@ -286,12 +299,9 @@ for index1, category_name in enumerate(categories):
         category_pairs.append(pair)
 
 
-pool = Pool(NWORKERS)
-progress_bar = tqdm(total=len(hnl_sample_list))
-#print
-results = tqdm(pool.imap(worker, hnl_sample_list), total=len(hnl_sample_list))
-tuple(results)  # fetch the lazy results
-#print
+
+for hnl_sample in hnl_sample_list:
+    worker(hnl_sample)
 
 status_dict = {}
 for year in YEARS:

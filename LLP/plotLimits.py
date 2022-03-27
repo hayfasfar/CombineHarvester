@@ -74,7 +74,7 @@ limit_var_list = ["exp0", "exp+1", "exp+2", "exp-1", "exp-2"]
 if not blinded:
     limit_var_list += ["obs"]
 
-lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
+lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
@@ -257,8 +257,8 @@ for year in years:
             cv.SetLogz()
             cv.Draw("")
 
-            hist_mu.GetXaxis().SetTitle("m_{N} [GeV]")
-            hist_mu.GetYaxis().SetTitle("|V_{lN}|^{2}")
+            hist_mu.GetXaxis().SetTitle("m#lower[0.3]{#scale[0.7]{N}} (GeV)")
+            hist_mu.GetYaxis().SetTitle("|V#lower[0.3]{#scale[0.7]{#font[12]{l}N}}|#lower[-0.7]{#scale[0.7]{2}}")
             #hist_mu.GetZaxis().SetTitle("#sigma/#sigma_{th}")
             hist_mu.Draw("COLZ")
             hist_mu.SetMaximum(1e3)
@@ -296,7 +296,8 @@ for year in years:
             cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
 
             hist_mu.Draw("AXIS")
-            leg = style.makeLegend(0.16, 0.5, 0.5, 0.77)
+            leg = style.makeLegend(0.16, 0.4, 0.5, 0.77)
+            leg.SetTextSize(24)
 
             if not blinded:
                 leg.AddEntry(observed, "observed",'L')
@@ -386,7 +387,6 @@ for year in years:
                         0.0003602391,
                         0.0002851714
                     ])
-                print(mass_values_lhcb, coupling_values_lhcb)
                 graph_lhcb = ROOT.TGraphErrors(6,mass_values_lhcb,coupling_values_lhcb, x_errors_lhcb,y_errors_lhcb)
                 graph_lhcb.SetLineColor(ROOT.kRed)
                 graph_lhcb.SetLineWidth(3)
@@ -395,24 +395,64 @@ for year in years:
                 graph_lhcb.Draw("SAME L")
                 leg.AddEntry(graph_lhcb, "LHCb")
 
-            elif scenario == 2 and hnl_type == "majorana":
-                hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
-                hist_prompt.SetLineStyle(3)
-                hist_prompt.SetLineWidth(3)
-                hist_prompt.Draw("SAME")
+                if hnl_type == "majorana":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 15., 15., 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-4, 2e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 3e-7, 3.5e-7, 6e-7, 1e-6, 2e-6, 6e-6, 4e-5, 1.5e-4, 1e-3, 2.5e-3])
+                elif hnl_type == "dirac":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 16.5, 16.5, 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1.7e-4, 2e-5, 7e-6, 2.7e-6, 1.5e-6, 7e-7, 5e-7, 4e-7, 3e-7, 3e-7, 4e-7, 1e-6, 2.5e-6, 1.5e-5, 1.5e-4, 4e-4, 2e-3, 5e-3])
+
+                graph_exo_20_009 = ROOT.TGraph(len(mass_values_exo_20_009),mass_values_exo_20_009,coupling_values_exo_20_009)
+                graph_exo_20_009.SetLineColor(ROOT.kViolet)
+                graph_exo_20_009.SetLineWidth(3)
+                graph_exo_20_009.SetMarkerSize(0)
+                graph_exo_20_009.SetLineStyle(5)
+                graph_exo_20_009.Draw("SAME L")
+                leg.AddEntry(graph_exo_20_009, "EXO-20-009")
+                if hnl_type == "dirac":
+                    leg.AddEntry(median, "", "")
+
+            if scenario == 2:
+                if hnl_type == "majorana":
+                    hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
+                    hist_prompt.SetLineStyle(3)
+                    hist_prompt.SetLineWidth(3)
+                    hist_prompt.Draw("SAME")
+
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 13., 13., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 2.6e-5, 1.2e-5, 6.3e-6, 1.6e-6, 1.2e-6, 9.3e-7, 8.5e-7, 8.8e-7, 1e-6, 6.5e-6, 3.1e-5, 1.4e-4, 8e-4, 2.3e-3])
+
+                elif hnl_type == "dirac":
+                    mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 14., 11., 9., 7., 6.])
+                    coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 3.2e-5, 1.5e-5, 7.4e-6, 2e-6, 1.5e-6, 1e-6, 9e-7, 8.7e-7, 1e-6, 1e-5, 8.7e-5, 3.5e-4, 2e-3, 5e-3])
+
                 leg.AddEntry(hist_prompt, "ATLAS 3l, prompt")
+
+                graph_exo_20_009 = ROOT.TGraph(len(mass_values_exo_20_009),mass_values_exo_20_009,coupling_values_exo_20_009)
+                graph_exo_20_009.SetLineColor(ROOT.kViolet)
+                graph_exo_20_009.SetLineWidth(3)
+                graph_exo_20_009.SetMarkerSize(0)
+                graph_exo_20_009.SetLineStyle(5)
+                graph_exo_20_009.Draw("SAME L")
+                leg.AddEntry(graph_exo_20_009, "EXO-20-009")
+
                 leg.AddEntry(median, "", "")
                 leg.AddEntry(median, "", "")
+                if hnl_type == "dirac":
+                    leg.AddEntry(median, "", "")
+
             else:
                 leg.AddEntry(median, "", "")
                 leg.AddEntry(median, "", "")
+                leg.AddEntry(median, "", "")           
                 leg.AddEntry(median, "", "")           
 
             text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
             text.SetTextFont(63)
             text.SetTextSize(31)
-            style.makeCMSText(0.18, 0.89, additionalText="")
-            style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
+
+            style.makeCMSText(0.18, 0.89)#, additionalText="Simulation Preliminary")
+            style.makeLumiText(0.9, 0.95, year=year, lumi=lumi[year])
 
             cv.SaveAs("limits/{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
             cv.SaveAs("limits/{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
