@@ -9,7 +9,8 @@ from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = ["2016", "2017", "2018"]
-COUPLINGS = [1, 2, 7, 12, 47, 52] 
+#COUPLINGS = [2,12] 
+COUPLINGS = [1,2,7,12, 47,52]
 NBINS = 48
 ZERO_BIN_RATE = 0.001
 NWORKERS = 16
@@ -50,7 +51,8 @@ eval `scramv1 runtime -sh`
                 if status_dict[YEAR][COUPLING][proc]:
                     path = os.path.join('$PWD/cards/{}/coupling_{}/{}'.format(YEAR, COUPLING, proc))
                     submit_file.write(" \"")
-                    submit_file.write('''combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
+                    submit_file.write('''combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
+                    #submit_file.write('''combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
                     submit_file.write("\"")
                     submit_file.write("\n")
     
@@ -77,7 +79,8 @@ eval `scramv1 runtime -sh`
 
                 submit_file.write(" \"")
                 submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
-                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run expected --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                #submit_file.write('''&& combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
                 submit_file.write("\"")
                 submit_file.write("\n")
 
@@ -100,7 +103,6 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     bkgs_mc = []
     bkgs_abcd = ["wjets", "dyjets", "qcd", "vgamma", "topbkg"]
     signal = ["HNL"]
-
     cb.AddProcesses(era=[year], procs=bkgs_mc, bin=cats, signal=False)
     cb.AddProcesses(era=[year], procs=signal, bin=cats, signal=True) 
 
@@ -208,9 +210,24 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             ) 
             if ibin in [0, 1, 2]:
                 uncertainty_name = "unc_boosted_{}".format(year)
+                if year == "2016" :
+                    print "it enters here year 1 is " , year
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.02))
+                elif year == "2017" :
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.10))
+                else :
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.03))
+                    print "it enters here year 3 is " , year
+
+                
             else:
                 uncertainty_name = "unc_resolved_{}".format(year)
-            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
+                if year == "2016" :
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.09))
+                elif year == "2017" :
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.09))
+                else :
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.04))
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -224,7 +241,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     return True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--path", default="/vols/cms/vc1117/AN-19-207/histo/limits/hists_merged")
+parser.add_argument("--path", default="/home/hep/hsfar/private/limits/histo/limits/hists_merged2")
 args = parser.parse_args()
 hist_path = args.path
 
@@ -271,10 +288,10 @@ for index1, category_name in enumerate(categories):
 
 pool = Pool(NWORKERS)
 progress_bar = tqdm(total=len(hnl_sample_list))
-print
+#print
 results = tqdm(pool.imap(worker, hnl_sample_list), total=len(hnl_sample_list))
 tuple(results)  # fetch the lazy results
-print
+#print
 
 status_dict = {}
 for year in YEARS:

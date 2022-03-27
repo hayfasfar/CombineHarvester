@@ -40,9 +40,9 @@ def get_hist(file_name, hist_name):
 
 def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_hist_2, year="2016", topology="boosted"):
 
-    colour_signal_1 = "#9e2a2b"
-    colour_signal_2 = "#ff7d00"
-    colour_prefit = "#15616d"
+    colour_signal_1 = "#07a6d8"
+    colour_signal_2 = "#13eb7b"
+    colour_prefit = "#696767"
 
     lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
 
@@ -57,9 +57,9 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     pred_hist.GetYaxis().SetTitle("Events / category")
     pred_hist.GetYaxis().SetTitleOffset(1)
 
-    pred_hist.SetLineColor(ROOT.kAzure+1)
+    pred_hist.SetLineColor(ROOT.kRed+1)
     pred_hist.SetMarkerSize(0)
-    pred_hist.SetFillColor(ROOT.kAzure+1)
+    pred_hist.SetFillColor(ROOT.kRed+1)
 
     pred_hist_prefit.SetLineColor(ROOT.TColor.GetColor(colour_prefit))
     pred_hist_prefit.SetMarkerSize(0)
@@ -72,16 +72,16 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     obs_hist.SetLineWidth(2)
     pred_hist.SetMaximum(2.5*max(pred_hist.GetMaximum(), obs_hist.GetMaximum()))
 
-    pred_hist.SetMinimum(0)
-    obs_hist.SetMinimum(0)
+    pred_hist.SetMinimum(0.)
+    obs_hist.SetMinimum(0.)
     residuals = obs_hist.Clone("residuals")
     residuals.Divide(pred_hist)
     residuals.GetXaxis().LabelsOption("v")
 
     err_hist = pred_hist.Clone("")
-    err_hist.SetFillColor(ROOT.kAzure+2)
+    err_hist.SetFillColor(ROOT.TColor.GetColor("#f7d54c"))
     err_hist.SetFillStyle(3345)
-    err_hist.SetLineColor(ROOT.kAzure+2)
+    err_hist.SetLineColor(ROOT.TColor.GetColor("#f7d54c"))
     err_hist_ratio = err_hist.Clone("err_hist_ratio")
 
     obs_hist.SetBinErrorOption(ROOT.TH1D.kPoisson)
@@ -132,7 +132,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
 
     legend_signal = style.makeLegend(0.14, 0.76, 0.5, 0.87)
     legend_signal.SetTextSize(19)
-    legend_signal.AddEntry(signal_hist_1, "m_{N} = 2 GeV, c#tau_{0} = 100 mm")
+    legend_signal.AddEntry(signal_hist_1, "m_{N} = 4.5 GeV, c#tau_{0} = 100 mm")
     legend_signal.AddEntry(signal_hist_2, "m_{N} = 10 GeV, c#tau_{0} = 1 mm")
 
 
@@ -152,14 +152,14 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     l_OS_SS.SetLineStyle(2)
     l_OS_SS.SetLineWidth(3)
 
-    text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 3*pred_hist.GetMaximum(), "OS")
-    text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 3*pred_hist.GetMaximum(), "SS")
+    text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 6*pred_hist.GetMaximum(), "OS")
+    text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 6*pred_hist.GetMaximum(), "SS")
 
-    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
-    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
+    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
+    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
 
-    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
-    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
+    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
+    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
 
     text_displaced = ROOT.TLatex(obs_hist.GetNbinsX()*3/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
     text_displaced_2 = ROOT.TLatex(obs_hist.GetNbinsX()*6/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
@@ -183,7 +183,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     #n1 + 100*n2
     residuals.SetMarkerColor(1)
     residuals.SetLineColor(1)
-    residuals.GetYaxis().SetRangeUser(0, 5.3)
+    residuals.GetYaxis().SetRangeUser(0, 2.3)
     residuals.Draw("P")
     lres = ROOT.TLine(-0.5, 1., n_bins_total-0.5, 1.)
     lres.Draw("SAME")
@@ -197,11 +197,11 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     obs_hist.SetMinimum(1e-3)
     signal_hist_1.SetMinimum(1e-3)
     signal_hist_2.SetMinimum(1e-3)
-    pred_hist.GetYaxis().SetRangeUser(0.3, 300*pred_hist.GetMaximum())
+    pred_hist.GetYaxis().SetRangeUser(0.05 , 4000*pred_hist.GetMaximum())
     pred_hist.GetXaxis().SetLabelSize(0)
 
     pred_hist.Draw("HIST")
-    err_hist.Draw("E2 SAME")
+    #err_hist.Draw("E2 SAME")
     pred_hist_prefit.Draw("HIST SAME")
     obs_hist.Draw("HIST P L E SAME")
     signal_hist_1.Draw("HIST SAME")
@@ -227,9 +227,11 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     #style.makeCMSText(0.15, 0.91, additionalText="Preliminary")
     style.makeLumiText(0.55, 0.91, year=year, lumi=lumi[year])
 
+    #cv.SaveAs("yields/unblind_{}_{}.pdf".format(topology, year))
+    #cv.SaveAs("yields/unblind_{}_{}.png".format(topology, year))
+
     cv.SaveAs("yields/{}_{}.pdf".format(topology, year))
     cv.SaveAs("yields/{}_{}.png".format(topology, year))
-
 categories = [
     "mumu_OS", "ee_OS", "mue_OS", "emu_OS", 
     "mumu_SS", "ee_SS", "mue_SS", "emu_SS"
@@ -241,15 +243,15 @@ category_names = []
 category_names_raw = []
 
 root_file = "fitDiagnostics.root"
-signal = "HNL_majorana_all_ctau1p0e02_massHNL2p0_Vall9p078e-03"
+signal = "HNL_majorana_all_ctau1p0e02_massHNL4p5_Vall1p016e-03"
 signal_2 = "HNL_majorana_all_ctau1p0e00_massHNL10p0_Vall1p177e-03"
 
-signal_hist_path = "/vols/cms/vc1117/AN-19-207/histo/limits/hists_merged/"
+signal_hist_path = "/home/hep/hsfar/private/limits/histo/limits/hists_merged2/"
 
 root_file_signal_1 = signal_hist_path+signal+"_YEAR.root"
 root_file_signal_2 = signal_hist_path+signal_2+"_YEAR.root"
 
-coupling = "1"
+coupling = "7"
 
 k_factor = 1.1
 
@@ -260,6 +262,7 @@ with open("/vols/cms/LLP/gridpackLookupTable.json") as lookup_table_file:
 
     signal_xsec = lu_infos['xsec']['nominal']
     signal_xsec_2 = lu_infos_2['xsec']['nominal']
+    print "signal xsec is " , signal_xsec
 
 for topology in ["boosted", "resolved"]:
     output_hists_by_year = {}
@@ -293,8 +296,8 @@ for topology in ["boosted", "resolved"]:
                 hist_pred_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_pred_prefit_input = get_hist(root_file, "shapes_prefit/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_obs_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/data")
-                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_1")
-                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_1")
+                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_7")
+                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_7")
 
                 for idx in indices:
                     pred = hist_pred_input.GetBinContent(idx)
@@ -334,8 +337,9 @@ for topology in ["boosted", "resolved"]:
                     hist_signal.SetBinContent(hist_index, signal)
                     hist_signal2.SetBinContent(hist_index, signal2)
 
-            hist_signal.Scale(k_factor*signal_xsec)
-            hist_signal2.Scale(k_factor*signal_xsec_2)
+            hist_signal.Scale(k_factor*signal_xsec *10.)
+            #print "signal xsec is " , signal_xsec
+            hist_signal2.Scale(k_factor*signal_xsec_2 * 10.)
 
             output_hists_by_year[year]["pred"] = hist_pred
             output_hists_by_year[year]["pred_prefit"] = hist_pred_prefit
