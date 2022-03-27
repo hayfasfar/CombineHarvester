@@ -411,7 +411,7 @@ for year in years:
             text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
             text.SetTextFont(63)
             text.SetTextSize(31)
-            style.makeCMSText(0.18, 0.89, additionalText="Simulation Preliminary")
+            style.makeCMSText(0.18, 0.89, additionalText="")
             style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
 
             cv.SaveAs("limits/{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
