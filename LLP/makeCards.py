@@ -8,9 +8,9 @@ from tqdm import tqdm
 from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
-YEARS = ["2016", "2017", "2018"]
-#COUPLINGS = [2,12] 
-COUPLINGS = [1,2,7,12, 47,52]
+YEARS = [ "2016","2017", "2018"]
+COUPLINGS = [2,12] 
+#COUPLINGS = [1,2,7,12, 47,52]
 NBINS = 48
 ZERO_BIN_RATE = 0.001
 NWORKERS = 16
@@ -109,7 +109,8 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 
     systematics_uncorrelated = [
         "pu", "unclEn", "jesTotal", "jer", 
-        "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", "tight_electron_reco", "loose_electron_reco", 
+        "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", 
+        "loose_muon_id" , "loose_electron_id", "resolvedLepton_track_reco",
         "tagger_q", "tagger_qmu", "tagger_qe", 
         "scale", "pdf"
     ]
@@ -222,26 +223,13 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                     )
                 )
             ) 
+                    #print "it enters here year 3 is " , year
             if ibin in [0, 1, 2]:
                 uncertainty_name = "unc_boosted_{}".format(year)
-                if year == "2016" :
-                    print "it enters here year 1 is " , year
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.02))
-                elif year == "2017" :
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.10))
-                else :
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.03))
-                    print "it enters here year 3 is " , year
-
-                
             else:
                 uncertainty_name = "unc_resolved_{}".format(year)
-                if year == "2016" :
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.09))
-                elif year == "2017" :
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.09))
-                else :
-                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.04))
+            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -255,7 +243,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     return True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--path", default="/home/hep/hsfar/private/limits/histo/limits/hists_merged2")
+parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
 args = parser.parse_args()
 hist_path = args.path
 
