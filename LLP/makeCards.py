@@ -51,8 +51,8 @@ eval `scramv1 runtime -sh`
                 if status_dict[YEAR][COUPLING][proc]:
                     path = os.path.join('$PWD/cards/{}/coupling_{}/{}'.format(YEAR, COUPLING, proc))
                     submit_file.write(" \"")
-                    submit_file.write('''combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
-                    #submit_file.write('''combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
+                    #submit_file.write('''combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
+                    submit_file.write('''combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %s/out.txt --there -n HNL --mass %i''' % (path, COUPLING))
                     submit_file.write("\"")
                     submit_file.write("\n")
     
@@ -79,8 +79,8 @@ eval `scramv1 runtime -sh`
 
                 submit_file.write(" \"")
                 submit_file.write("combineCards.py "+combine_string+" >> " +path_combined+"out.txt ")
-                #submit_file.write('''&& combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
-                submit_file.write('''&& combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                submit_file.write('''&& combineTool.py -M AsymptoticLimits  --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
+                #submit_file.write('''&& combineTool.py -M AsymptoticLimits --run blind --cminPreScan --cminPreFit 1 --rAbsAcc 0.000001 -d %sout.txt --there -n HNL --mass %i''' % (path_combined, COUPLING))
                 submit_file.write("\"")
                 submit_file.write("\n")
 
@@ -133,18 +133,18 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             "$BIN/$PROCESS_coupling_{}_$SYSTEMATIC".format(coupling)
             )
     
-    bbFactory = ch.BinByBinFactory()
-    bbFactory.SetAddThreshold(0.2)
-    bbFactory.SetFixNorm(True)
-    #bbFactory.SetMergeThreshold(0.5)
+    #bbFactory = ch.BinByBinFactory()
+    #bbFactory.SetAddThreshold(0.2)
+    #bbFactory.SetFixNorm(True)
+    #bbFactory.SetMergeThreshold(0.01)
     #bbFactorySetMergeZeroBins(True)
     #bbFactory.SetMergeSaturatedBins(True)
-    bbFactory.SetPoissonErrors(True)
-    bbFactory.SetPattern("bb_$BIN_$ERA_bin_$#")
+    #bbFactory.SetPoissonErrors(True)
+    #bbFactory.SetPattern("bb_$BIN_$ERA_bin_$#")
     #bbFactory.MergeBinErrors(cb.cp().backgrounds())
 
     #add only for category D
-    bbFactory.AddBinByBin(cb.cp().bin(map(lambda x: x[1], filter(lambda x: x[1].endswith("_D"), cats))).process(signal), cb)
+    #bbFactory.AddBinByBin(cb.cp().bin(map(lambda x: x[1], filter(lambda x: x[1].endswith("_D"), cats))).process(signal), cb)
     
     
     for _, category_name in cats:
@@ -225,10 +225,15 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             ) 
                     #print "it enters here year 3 is " , year
             if ibin in [0, 1, 2]:
-                uncertainty_name = "unc_boosted_{}".format(year)
+                uncertainty_name = "unc_boosted_{}_{}".format(year, ibin+1)
+     
+                cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
             else:
-                uncertainty_name = "unc_resolved_{}".format(year)
-            cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                 uncertainty_name = "unc_resolved_{}_{}".format(year , ibin+1)
+                 if ibin == 3 : 
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                 else : 
+                    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
 
 
     if not os.path.exists(output_path):
