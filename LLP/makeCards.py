@@ -9,7 +9,9 @@ from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = [ "2016","2017", "2018"]
-COUPLINGS = [1,2,7,12, 47,52]
+#COUPLINGS = [1,2,7,12, 47,52]
+COUPLINGS = [7,12]
+
 NBINS = 48
 ZERO_BIN_RATE = 0.001
 NWORKERS = 16
@@ -241,11 +243,12 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                 #uncertainty_name = "unc_boosted_{}_{}_{}".format(year, ibin+1 , text)
                 uncertainty_name = "unc_boosted_{}_{}".format(year, ibin+1)
                 cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                #print "it arrives here and unc name is ",uncertainty_name  
 		if "mumu_OS" in category_name:
 		    uncertainty_name_OSMUMU = "unc_boosted_{}_{}_{}".format(year,category_name, ibin+1)
 		    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], OSMUMSysts[ibin+1,year]))
             else:
-                 uncertainty_name = "unc_resolved_{}_{}_{}".format(year , ibin+1)
+                 uncertainty_name = "unc_resolved_{}_{}".format(year , ibin+1)
                  if ibin == 3 : 
                     cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
                  else : 
