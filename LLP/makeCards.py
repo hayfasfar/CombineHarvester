@@ -210,6 +210,18 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                     param.set_range(0.01, max(4, content+5.*err))
  
         # ABCD D = B*C/A
+	OSMUMSysts = {}
+	OSMUMSysts[0,2016] = 1.4
+	OSMUMSysts[1,2016] = 1.2
+	OSMUMSysts[2,2016] = 1.2
+	
+	OSMUMSysts[0,2017] = 1.4
+	OSMUMSysts[1,2017] = 1.3
+	OSMUMSysts[2,2017] = 1.3
+
+	OSMUMSysts[0,2018] = 1.1
+	OSMUMSysts[1,2018] = 1.2
+	OSMUMSysts[2,2018] = 1.2
         for ibin in range(nbins):
             process_name = "bkg_{}_bin{}".format(category_name, ibin+1)
             syst_name = "rate_bkg_{}_bin{}_{}".format(category_name, ibin+1, year)
@@ -228,6 +240,9 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                 uncertainty_name = "unc_boosted_{}_{}".format(year, ibin+1)
      
                 cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+		if "mumu_OS" in category_name:
+		    uncertainty_name_OSMUMU = "unc_boosted_{}_{}_{}".format(year,category_name, ibin+1)
+		    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], OSMUMSysts[ibin,year]))
             else:
                  uncertainty_name = "unc_resolved_{}_{}".format(year , ibin+1)
                  if ibin == 3 : 
