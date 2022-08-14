@@ -9,8 +9,7 @@ from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = [ "2016","2017", "2018"]
-#COUPLINGS = [1,2,7,12, 47,52]
-COUPLINGS = [7,12]
+COUPLINGS = [1,2,7,12, 47,52]
 NBINS = 48
 ZERO_BIN_RATE = 0.001
 NWORKERS = 16
