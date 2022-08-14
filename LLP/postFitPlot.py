@@ -1,7 +1,7 @@
 import ROOT
 ROOT.gROOT.SetBatch(True)
 import style
-ROOT.gStyle.SetErrorX(0)
+#ROOT.gStyle.SetErrorX(0)
 
 import json
 
@@ -80,7 +80,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     residuals.Divide(pred_hist)
     residuals.GetXaxis().LabelsOption("v")
 
-    err_hist = pred_hist.Clone("")
+    err_hist = pred_hist.Clone("err_hist")
     err_hist.SetFillColor(ROOT.TColor.GetColor("#f7d54c"))
     err_hist.SetFillStyle(3345)
     err_hist.SetLineColor(ROOT.TColor.GetColor("#f7d54c"))
@@ -93,13 +93,13 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
         obs = obs_hist.GetBinContent(j+1)
         err_obs = obs_hist.GetBinError(j+1)
         pred = pred_hist.GetBinContent(j+1)
+        err_pred = pred_hist.GetBinError(j+1)
 
         ratio = obs/pred
-        err_pred = pred_hist.GetBinError(j+1)
+        pull = obs-pred/err_pred
 
         err_hist_ratio.SetBinContent(j+1, 1)
         err_hist_ratio.SetBinError(j+1, err_pred/pred)
-
         residuals.SetBinError(j+1, err_obs*ratio/(obs+1e-9))
 
     cv = style.makeCanvas()
@@ -177,7 +177,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     text_OS.SetTextAlign(22)
     text_SS.SetTextAlign(22)
 
-    #legend.AddEntry(err_hist, 'stat. unc', 'f')
+    legend.AddEntry(err_hist, 'stat. unc', 'f')
 
     pad2.cd()
     residuals.GetYaxis().SetTitle("Obs/Pred")
@@ -204,7 +204,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     pred_hist.GetXaxis().SetLabelSize(0)
 
     pred_hist.Draw("HIST")
-    #err_hist.Draw("E2 SAME")
+    err_hist.Draw("E2 SAME")
     pred_hist_prefit.Draw("HIST SAME")
     obs_hist.Draw("HIST P L E SAME")
     signal_hist_1.Draw("HIST SAME")
@@ -249,12 +249,12 @@ root_file = "fitDiagnostics.root"
 signal = "HNL_majorana_all_ctau1p0e02_massHNL4p5_Vall1p016e-03"
 signal_2 = "HNL_majorana_all_ctau1p0e00_massHNL10p0_Vall1p177e-03"
 
-signal_hist_path = "/home/hep/hsfar/private/limits/histo/limits/hists_merged2/"
+signal_hist_path = "/vols/cms/hsfar/hists_merged/"
 
 root_file_signal_1 = signal_hist_path+signal+"_YEAR.root"
 root_file_signal_2 = signal_hist_path+signal_2+"_YEAR.root"
 
-coupling = "7"
+coupling = "12"
 
 k_factor = 1.1
 
@@ -299,8 +299,8 @@ for topology in ["boosted", "resolved"]:
                 hist_pred_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_pred_prefit_input = get_hist(root_file, "shapes_prefit/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_obs_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/data")
-                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_7")
-                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_7")
+                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_12")
+                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_12")
 
                 for idx in indices:
                     pred = hist_pred_input.GetBinContent(idx)

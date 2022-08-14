@@ -67,7 +67,7 @@ json_path = "jsons"
 
 K_FACTOR = 1.1
 
-blinded = True
+blinded = False
 
 limit_var_list = ["exp0", "exp+1", "exp+2", "exp-1", "exp-2"]
 
@@ -78,12 +78,12 @@ lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
-coupling_dict[1.0] = ["emutau", "V_{e} : V_{#mu} : V_{#tau} = 1 : 1 : 1"]
-coupling_dict[2.0] = ["ee", "V_{e} : V_{#mu} : V_{#tau} = 1 : 0 : 0"]
-coupling_dict[7.0] = ["emu", "V_{e} : V_{#mu} : V_{#tau} = 1 : 1 : 0"]
-coupling_dict[12.0] = ["mumu", "V_{e} : V_{#mu} : V_{#tau} = 0 : 1 : 0"]
-coupling_dict[47.0] = ["etau", "V_{e} : V_{#mu} : V_{#tau} = 1 : 0 : 1"]
-coupling_dict[52.0] = ["mutau", "V_{e} : V_{#mu} : V_{#tau} = 0 : 1 : 1"]
+#coupling_dict[1.0] = ["emutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 1"]
+#coupling_dict[2.0] = ["ee", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 0"]
+#coupling_dict[7.0] = ["emu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 0"]
+coupling_dict[12.0] = ["mumu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 0"]
+#coupling_dict[47.0] = ["etau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 1"]
+#coupling_dict[52.0] = ["mutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 1"]
 
 n_bins = 200
 
@@ -278,7 +278,7 @@ for year in years:
 
             median.SetTitle("")
 
-            leg = style.makeLegend(0.16, 0.5, 0.5, 0.77)
+            leg = style.makeLegend(0.7, 0.7, 0.89, 0.85)
             leg.AddEntry(median, "expected",'L')
 
             if not blinded:
@@ -290,13 +290,15 @@ for year in years:
             text.SetTextFont(63)
             text.SetTextSize(31)
             #Text(0.18, 0.89, additionalText="Simulation Preliminary")
+            #style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
             style.makeLumiText(0.64, 0.95, year=year, lumi=lumi[year])
 
             cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
             cv.SaveAs("limits/interpolation_{}_coupling_{}_{}.png".format(hnl_type, scenario, year))
 
             hist_mu.Draw("AXIS")
-            leg = style.makeLegend(0.16, 0.4, 0.5, 0.77)
+            #leg = style.makeLegend(0.16, 0.4, 0.5, 0.77)
+            leg = style.makeLegend(0.58, 0.49, 0.88, 0.88)
             leg.SetTextSize(24)
 
             if not blinded:
@@ -447,12 +449,17 @@ for year in years:
                 leg.AddEntry(median, "", "")           
                 leg.AddEntry(median, "", "")           
 
-            text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
+            #text = style.makeText(0.18, 0.8, 0.2, 0.80, coupling_title+", "+hnl_type.capitalize())
+            text = style.makeText(0.18, 0.76, 0.2, 0.80, coupling_title)
+            text2 = style.makeText(0.18, 0.7, 0.2, 0.70, hnl_type.capitalize())
             text.SetTextFont(63)
             text.SetTextSize(31)
 
+            text2.SetTextFont(63)
+            text2.SetTextSize(31)
             style.makeCMSText(0.18, 0.89)#, additionalText="Simulation Preliminary")
-            style.makeLumiText(0.9, 0.95, year=year, lumi=lumi[year])
+            #style.makeLumiText(0.9, 0.95, year=year, lumi=lumi[year])
+            style.makeLumiText(0.9, 0.95, year="13 TeV", lumi=lumi[year])
 
             cv.SaveAs("limits/{}_coupling_{}_{}.pdf".format(hnl_type, scenario, year))
             cv.SaveAs("limits/{}_coupling_{}_{}.png".format(hnl_type, scenario, year))

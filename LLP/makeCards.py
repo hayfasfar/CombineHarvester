@@ -9,8 +9,7 @@ from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = [ "2016","2017", "2018"]
-COUPLINGS = [2,12] 
-#COUPLINGS = [1,2,7,12, 47,52]
+COUPLINGS = [1,2,7,12, 47,52]
 NBINS = 48
 ZERO_BIN_RATE = 0.001
 NWORKERS = 16
@@ -148,9 +147,10 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     
     
     for _, category_name in cats:
+
         obs = ch.Observation()
         obs_sum_hist = get_hist(
-            os.path.join(hist_path,"{}.root".format(year)),
+        os.path.join(hist_path,"{}.root".format(year)),
                 "{}/{}".format(category_name, "data")
         )
 
@@ -169,8 +169,20 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
         bin_max = nbins+0.5
 
 
+        text = "" 
         for region in ["A","B","C", "D"]:
             name = category_name.replace("_D", "_"+region)
+
+            if category_name == "mumu_OS_D":  
+               text = "SFOS_mu" 
+            if category_name == "ee_OS_D" :  
+               text = "SFOS_e" 
+            elif category_name == "mumu_SS_D" or category_name == "ee_SS_D" :  
+               text = "SFSS" 
+            elif category_name == "mue_OS_D" or category_name == "emu_OS_D" :  
+               text = "OFOS" 
+            elif category_name == "mue_SS_D" or category_name == "emu_SS_D" :  
+               text = "OFSS" 
             for ibin in range(nbins):
                 # Dummy histogram per bin , scale by rate parameters
                 proc = ch.Process()
@@ -225,16 +237,17 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             ) 
                     #print "it enters here year 3 is " , year
             if ibin in [0, 1, 2]:
+                #uncertainty_name = "unc_boosted_{}_{}_{}".format(year, ibin+1 , text)
                 uncertainty_name = "unc_boosted_{}_{}".format(year, ibin+1)
-     
-                cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                #uncertainty_name = "unc_boosted_{}_{}_{}".format(year, ibin+1 , category_name )
+                #print "uncertainty name is " , uncertainty_name
+                cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.2))
             else:
-                 uncertainty_name = "unc_resolved_{}_{}".format(year , ibin+1)
+                 uncertainty_name = "unc_resolved_{}_{}_{}".format(year , ibin+1, text)
                  if ibin == 3 : 
                     cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
                  else : 
                     cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
-
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -248,7 +261,8 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     return True
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
+#parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
+parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged2/")
 args = parser.parse_args()
 hist_path = args.path
 

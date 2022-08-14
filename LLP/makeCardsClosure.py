@@ -26,10 +26,10 @@ def get_hist(file_name, hist_name):
         return hist
 
 
-hist_path = "/vols/cms/vc1117/AN-19-207/histo/abcd"
-
+hist_path = "/home/hep/hsfar/private/limits/histo/abcd"
 categories = [
-    "mumu_OS", "mumu_SS",
+    "mumu_OS", 
+    "mumu_SS",
     "ee_OS", "ee_SS",
     "mue_OS", "mue_SS",
     "emu_OS", "emu_SS",
@@ -43,7 +43,7 @@ for topology in ["boosted", "resolved"]:
         proc_signal.set_process("fake_signal")
         proc_signal.set_era(year)
         proc_signal.set_signal(True)
-
+        text = ""
         for category_name in categories:
             for region in ["A","B","C", "D"]:
                 obs = ch.Observation()
@@ -112,8 +112,13 @@ for topology in ["boosted", "resolved"]:
                         )
                 ) 
                     # 15 % non-closure uncert
-
-                    cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "lnN", ch.SystMap("era")([year], 1.15))
+                    #uncertainty_name = "uncertainty_{}_{}_{}_{}".format(topology, year, ibin+1 , category_name) 
+                    uncertainty_name = "uncertainty_{}_{}_{}".format(topology, year, ibin+1 ) 
+                    #uncertainty_name = "uncertainty_{}_{}".format(topology, year) 
+                    if topology == "boosted" : 
+                       cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                    else : 
+                       cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
                     # for determining uncertainy
                     #cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "rateParam", ch.SystMap("era")([year], 1.))
                     #param = cb.GetParameter("uncertainty"+topology+year)
