@@ -172,17 +172,6 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
         text = "" 
         for region in ["A","B","C", "D"]:
             name = category_name.replace("_D", "_"+region)
-
-            if category_name == "mumu_OS_D":  
-               text = "SFOS_mu" 
-            if category_name == "ee_OS_D" :  
-               text = "SFOS_e" 
-            elif category_name == "mumu_SS_D" or category_name == "ee_SS_D" :  
-               text = "SFSS" 
-            elif category_name == "mue_OS_D" or category_name == "emu_OS_D" :  
-               text = "OFOS" 
-            elif category_name == "mue_SS_D" or category_name == "emu_SS_D" :  
-               text = "OFSS" 
             for ibin in range(nbins):
                 # Dummy histogram per bin , scale by rate parameters
                 proc = ch.Process()
@@ -256,7 +245,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 		    uncertainty_name_OSMUMU = "unc_boosted_{}_{}_{}".format(year,category_name, ibin+1)
 		    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], OSMUMSysts[ibin+1,year]))
             else:
-                 uncertainty_name = "unc_resolved_{}_{}_{}".format(year , ibin+1, text)
+                 uncertainty_name = "unc_resolved_{}_{}_{}".format(year , ibin+1)
                  if ibin == 3 : 
                     cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
                  else : 
