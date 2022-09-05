@@ -8,9 +8,10 @@ from tqdm import tqdm
 from multiprocessing import Pool
 ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
-YEARS = [ "2016","2017", "2018"]
+YEARS = ["2016","2017", "2018"]
+#YEARS = ["2016"]
 #COUPLINGS = [1,2,7,12, 47,52]
-COUPLINGS = [7,12]
+COUPLINGS = [2,7,12]
 
 NBINS = 48
 ZERO_BIN_RATE = 0.001
@@ -212,19 +213,6 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
                     param.set_val(max(0.01, content))
                     param.set_range(0.01, max(4, content+5.*err))
  
-        # ABCD D = B*C/A
-	OSMUMSysts = {}
-	OSMUMSysts[1,"2016"] = 1.4
-	OSMUMSysts[2,"2016"] = 1.2
-	OSMUMSysts[3,"2016"] = 1.2
-	
-	OSMUMSysts[1,"2017"] = 1.4
-	OSMUMSysts[2,"2017"] = 1.3
-	OSMUMSysts[3,"2017"] = 1.3
-
-	OSMUMSysts[1,"2018"] = 1.1
-	OSMUMSysts[2,"2018"] = 1.2
-	OSMUMSysts[3,"2018"] = 1.2
         for ibin in range(nbins):
             process_name = "bkg_{}_bin{}".format(category_name, ibin+1)
             syst_name = "rate_bkg_{}_bin{}_{}".format(category_name, ibin+1, year)
@@ -240,15 +228,13 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
             ) 
                     #print "it enters here year 3 is " , year
             if ibin in [0, 1, 2]:
-                #uncertainty_name = "unc_boosted_{}_{}_{}".format(year, ibin+1 , text)
-                uncertainty_name = "unc_boosted_{}_{}".format(year, ibin+1)
+                uncertainty_name = "unc_boosted_{}_{}_{}".format(year, ibin+1, category_name)
                 cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
-                #print "it arrives here and unc name is ",uncertainty_name  
 		if "mumu_OS" in category_name:
 		    uncertainty_name_OSMUMU = "unc_boosted_{}_{}_{}".format(year,category_name, ibin+1)
-		    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], OSMUMSysts[ibin+1,year]))
+		    cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], 1.25))
             else:
-                 uncertainty_name = "unc_resolved_{}_{}".format(year , ibin+1)
+                 uncertainty_name = "unc_resolved_{}_{}_{}".format(year , ibin+1 , category_name)
                  if ibin == 3 : 
                     cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
                  else : 
@@ -266,6 +252,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     return True
 
 parser = argparse.ArgumentParser()
+### the path to use with final cuts after reblinding is ="/vols/cms/hsfar/hists_merged2/" 
 #parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
 parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged2/")
 args = parser.parse_args()
