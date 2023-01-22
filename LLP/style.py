@@ -165,7 +165,7 @@ def makeCMSText(x1,y1,additionalText=None,dx=0.088, size=30):
         pTextAdd.SetTextAlign(13)
         rootObj.append(pTextAdd)
         pTextAdd.Draw("Same")
-    return
+    return pTextCMS
     
 def makeLumiText(x1, y1, lumi, year, size=30):
     pText = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
@@ -175,7 +175,7 @@ def makeLumiText(x1, y1, lumi, year, size=30):
     pText.SetTextAlign(13)
     rootObj.append(pText)
     pText.Draw("Same")
-    return
+    return pText
  
 def makeText(x1,y1,x2, y2, text,size=30):
     pText = ROOT.TPaveText(x1,y1,x2,y2,"NBNDC")
@@ -186,7 +186,7 @@ def makeText(x1,y1,x2, y2, text,size=30):
     pText.SetFillColorAlpha(ROOT.kWhite, 0.9)
     rootObj.append(pText)
     pText.Draw()
-    return
+    return pText
 
 ptSymbol = "p#kern[-0.8]{ }#lower[0.3]{#scale[0.7]{T}}"
 metSymbol = ptSymbol+"#kern[-2.3]{ }#lower[-0.8]{#scale[0.7]{miss}}"

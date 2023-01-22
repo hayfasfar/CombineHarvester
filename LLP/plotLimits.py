@@ -6,11 +6,8 @@ ROOT.gROOT.SetBatch(1)
 ROOT.gStyle.SetPalette(ROOT.kDarkRainBow)
 import json
 from array import array
-import scipy
-import scipy.spatial
 from scipy import interpolate
 import numpy as np
-import math
 import pandas as pd
 import os
 
@@ -66,7 +63,7 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-json_path = "/vols/cms/hsfar/jsons"
+json_path = "jsons"
 
 K_FACTOR = 1.1
 
@@ -78,9 +75,7 @@ if not blinded:
     limit_var_list += ["obs"]
 
 lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
-#years = ["2016", "2017", "2018", "combined"]
-
-years = ["2016"]
+years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
 #coupling_dict[1.0] = ["emutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 1"]
@@ -92,132 +87,9 @@ coupling_dict[12.0] = ["mumu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 0"]
 
 n_bins = 200
 
-mass_range = np.geomspace(1., 20., num=n_bins)
+mass_range = np.geomspace(1., 19., num=n_bins)
 log_coupling_range = np.linspace(-7, 0., num=n_bins)
 coupling_range = np.power(10, log_coupling_range)
-
-
-def smoothPoints(points,values,addTrigs=False,splineFit=False):
-    delaunay = scipy.spatial.Delaunay(points)
-    
-    newPoints = []
-    newValues = []
-    for i,trigIdx in enumerate(delaunay.simplices):
-        smooth1 = 0.5*(values[trigIdx[0]]+values[trigIdx[1]])
-        smooth2 = 0.5*(values[trigIdx[0]]+values[trigIdx[2]])
-        smooth3 = 0.5*(values[trigIdx[1]]+values[trigIdx[2]])
-        smooth = 0.3333*(values[trigIdx[0]]+values[trigIdx[1]]+values[trigIdx[2]])
-        
-        midpoint = 0.333*(points[trigIdx[0]]+points[trigIdx[1]]+points[trigIdx[2]])
-        
-        newPoints.append(midpoint)
-        newValues.append(smooth)
-        
-    newPoints = np.stack(newPoints,axis=0)
-    newValues = np.array(newValues)
-    
-    smoothValues = np.zeros_like(values)
-    
-    newDelaunay = scipy.spatial.Delaunay(newPoints)
-    for ipoint in range(points.shape[0]):
-        simplexIndex = newDelaunay.find_simplex(points[ipoint])
-        pointIndices = newDelaunay.simplices[simplexIndex]
-        
-        smoothValues[ipoint] = 0.5*values[ipoint]+0.5*(0.333*(newValues[pointIndices[0]]+newValues[pointIndices[1]]+newValues[pointIndices[2]]))
-        
-    allPoints = np.concatenate([newPoints,points],axis=0)
-    allValues = np.concatenate([newValues,smoothValues],axis=0)
-    
-    
-    if splineFit:
-        tck = interpolate.bisplrep(allPoints[:,0], allPoints[:,1], allValues, kx=2, ky=2, s=0.01*allPoints.shape[0], eps=1e-8)
-        for ipoint in range(newPoints.shape[0]):
-            newValues[ipoint] = interpolate.bisplev(newPoints[ipoint,0],newPoints[ipoint,1], tck)
-        for ipoint in range(points.shape[0]):
-            smoothValues[ipoint] = interpolate.bisplev(points[ipoint,0],points[ipoint,1], tck)
-            
-        
-    if addTrigs:
-        return np.concatenate([newPoints,points],axis=0),np.concatenate([newValues,smoothValues],axis=0)
-    else:
-        return points,smoothValues
-        
-
-    
-
-def interpolatedFct(points,values,transformations=[]):
-    transformedPoints = []
-    if len(transformations)!=points.shape[1]:
-        raise Exception("ERROR: transformation (%i) need to be of same length as point dims (%i)"%(
-            len(transformations),
-            points.shape[1]
-        ))
-    
-    for i,transformation in enumerate(transformations):
-        transformedPoints.append(
-            transformation(points[:,i])
-        )
-    transformedPoints = np.stack(transformedPoints,axis=1)
-    
-    transformedPoints,values = smoothPoints(transformedPoints,values,addTrigs=True,splineFit=False)
-    transformedPoints,values = smoothPoints(transformedPoints,values,addTrigs=True,splineFit=False)
-    transformedPoints,values = smoothPoints(transformedPoints,values,addTrigs=True,splineFit=True)
-    #transformedPoints,values = smoothPoints(transformedPoints,values,addTrigs=False,splineFit=True)
-    print (points.shape,transformedPoints.shape)
-    #transformedPoints,values = smoothPoints(transformedPoints,values)
-    #transformedPoints,values = smoothPoints(transformedPoints,values)
-    
-    delaunay = scipy.spatial.Delaunay(transformedPoints)
-    
-    
-    
-    
-    
-    def getValue(point):
-        transformedPoint = []
-        for i,transformation in enumerate(transformations):
-            transformedPoint.append(
-                transformation(point[i])
-            )
-        transformedPoint = np.array(transformedPoint)
-        simplexIndex = delaunay.find_simplex(transformedPoint)
-        pointIndices = delaunay.simplices[simplexIndex]
-        simplexPoints = transformedPoints[pointIndices]
-        
-        minSimplexPoints = np.amin(simplexPoints,axis=0)
-        maxSimplexPoints = np.amax(simplexPoints,axis=0)
-        distance = np.fabs(maxSimplexPoints-minSimplexPoints)+1e-6
-        
-        
-        weight = np.prod(1.0-np.abs(simplexPoints-transformedPoint)/distance,axis=1)
-        return 0.9*np.sum(values[pointIndices]*weight)/np.sum(weight)+0.1*np.mean(values[pointIndices])
-     
-    return getValue
-'''
-def interpolatedFct(points,values,transformations=[]):
-    transformedPoints = []
-    if len(transformations)!=points.shape[1]:
-        raise Exception("ERROR: transformation (%i) need to be of same length as point dims (%i)"%(
-            len(transformations),
-            points.shape[1]
-        ))
-    
-    for i,transformation in enumerate(transformations):
-        transformedPoints.append(
-            transformation(points[:,i])
-        )
-    transformedPoints = np.stack(transformedPoints,axis=1)
-    f = interpolate.interp2d(transformedPoints[:,0], transformedPoints[:,1], values, kind='cubic')
-    def getValue(point):
-        transformedPoint = []
-        for i,transformation in enumerate(transformations):
-            transformedPoint.append(
-                transformation(point[i])
-            )
-        transformedPoint = np.array(transformedPoint)
-        return f(transformedPoint[0],transformedPoint[1])
-    return getValue
-'''
 
 with open("/vols/cms/LLP/gridpackLookupTable.json") as lookup_table_file:
     lookup_table = json.load(lookup_table_file)
@@ -229,7 +101,7 @@ for year in years:
         coupling_text = coupling_dict[scenario][0]
         coupling_title = coupling_dict[scenario][1]
 
-        for hnl_type in ["dirac"]:#,"majorana"]:
+        for hnl_type in ["majorana", "dirac"]:
             print(hnl_type)
             # arrays to store mass, V2 and sigma/sigma_th values
             masses = []
@@ -246,10 +118,6 @@ for year in years:
                 if xsec_dict is None:
                     continue
                 mass, coupling, xsec = parse_lookup_table(f, lookup_table)
-                
-                
-
-                #print mass, coupling, xsec
 
                 # if "ctau1p0e-05" in f: 
                 #      continue
@@ -290,58 +158,19 @@ for year in years:
                 log_observed_points = np.log10(np.array(df['obs']))
 
             df.to_csv("csv/limit_{}_coupling_{}_{}.csv".format(hnl_type, scenario, year))
-            
-            
-            results_theory = np.zeros((n_bins,n_bins),dtype=np.float32)
-            results = np.zeros((n_bins,n_bins),dtype=np.float32)
-            results_plus = np.zeros((n_bins,n_bins),dtype=np.float32)
-            results_minus = np.zeros((n_bins,n_bins),dtype=np.float32)
-            results_plus_two = np.zeros((n_bins,n_bins),dtype=np.float32)
-            results_minus_two = np.zeros((n_bins,n_bins),dtype=np.float32)
-            
-            results_theory_fct = interpolatedFct(mass_coupling_pair,log_theory_points,transformations=[lambda x: np.log(x), lambda x: x])
-            results_fct = interpolatedFct(mass_coupling_pair,log_expected_points,transformations=[lambda x: np.log(x), lambda x: x])
-            results_plus_fct = interpolatedFct(mass_coupling_pair,log_expected_points_plus,transformations=[lambda x: np.log(x), lambda x: x])
-            results_minus_fct = interpolatedFct(mass_coupling_pair,log_expected_points_minus,transformations=[lambda x: np.log(x), lambda x: x])
-            results_plus_two_fct = interpolatedFct(mass_coupling_pair,log_expected_points_plus_two,transformations=[lambda x: np.log(x), lambda x: x])
-            results_minus_two_fct = interpolatedFct(mass_coupling_pair,log_expected_points_minus_two,transformations=[lambda x: np.log(x), lambda x: x])
-            
-            for i in range(n_bins):
-                for j in range(n_bins):
-                    results_theory[i,j] = results_theory_fct([mass_range[i],log_coupling_range[j]])
-                    results[i,j] = results_fct([mass_range[i],log_coupling_range[j]])
-                    results_plus[i,j] = results_plus_fct([mass_range[i],log_coupling_range[j]])
-                    results_minus[i,j] = results_minus_fct([mass_range[i],log_coupling_range[j]])
-                    results_plus_two[i,j] = results_plus_two_fct([mass_range[i],log_coupling_range[j]])
-                    results_minus_two[i,j] = results_minus_two_fct([mass_range[i],log_coupling_range[j]])
-            
-            '''
+            n_bins = 200
             grid_x, grid_y = np.meshgrid(mass_range, log_coupling_range, indexing='ij')
             fit_method = 'cubic'
-            
-            results_theory = interpolate.griddata(mass_coupling_pair, log_theory_points, (grid_x, grid_y), method=fit_method,rescale=True)
-            results = interpolate.griddata(mass_coupling_pair, log_expected_points, (grid_x, grid_y), method=fit_method,rescale=True)
-            results_plus = interpolate.griddata(mass_coupling_pair, log_expected_points_plus, (grid_x, grid_y), method=fit_method,rescale=True)
-            results_minus = interpolate.griddata(mass_coupling_pair, log_expected_points_minus, (grid_x, grid_y), method=fit_method,rescale=True)
-            results_plus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_plus_two, (grid_x, grid_y), method=fit_method,rescale=True)
-            results_minus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_minus_two, (grid_x, grid_y), method=fit_method,rescale=True)
-            
-            for i in range(n_bins):
-                for j in range(n_bins):
-                    if not np.isfinite(results[i,j]).all():
-                    
-                        print i,j,results[i,j]
-            '''
-            
+
+            results_theory = interpolate.griddata(mass_coupling_pair, log_theory_points, (grid_x, grid_y), method=fit_method)
+            results = interpolate.griddata(mass_coupling_pair, log_expected_points, (grid_x, grid_y), method=fit_method)
+            results_plus = interpolate.griddata(mass_coupling_pair, log_expected_points_plus, (grid_x, grid_y), method=fit_method)
+            results_minus = interpolate.griddata(mass_coupling_pair, log_expected_points_minus, (grid_x, grid_y), method=fit_method)
+            results_plus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_plus_two, (grid_x, grid_y), method=fit_method)
+            results_minus_two = interpolate.griddata(mass_coupling_pair, log_expected_points_minus_two, (grid_x, grid_y), method=fit_method)
+
             if not blinded:
-                
-                results_obs = np.zeros((n_bins,n_bins),dtype=np.float32)
-                results_obs_fct = interpolatedFct(mass_coupling_pair,log_observed_points,transformations=[lambda x: np.log(x), lambda x: x])
-                for i in range(n_bins):
-                    for j in range(n_bins):
-                        results_obs[i,j] = results_obs_fct([mass_range[i],log_coupling_range[j]])
-                
-                #results_obs = interpolate.griddata(mass_coupling_pair, log_observed_points, (grid_x, grid_y), method=fit_method,rescale=True)
+                results_obs = interpolate.griddata(mass_coupling_pair, log_observed_points, (grid_x, grid_y), method=fit_method)
 
 
             hist_mu = ROOT.TH2D("mu"+hnl_type+str(scenario), "mu", n_bins-1, mass_range, n_bins-1, coupling_range)
@@ -490,15 +319,7 @@ for year in years:
 
             if not blinded:
                 observed.Draw("Lsame")
-                
-            rootObj = []
-            for ipoint in range(mass_coupling_pair.shape[0]):
-                m = ROOT.TMarker(mass_coupling_pair[ipoint,0],10**mass_coupling_pair[ipoint,1],20)
-                rootObj.append(m)
-                m.SetMarkerSize(0.8)
-                m.SetMarkerColor(ROOT.kBlack)
-                m.Draw()
-            
+
             leg.AddEntry(green, "#pm 1 std. deviation",'f')
             leg.AddEntry(yellow,"#pm 2 std. deviation",'f')
 
