@@ -12,6 +12,7 @@ import os
 import random
 
 import style
+import refLimits
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetErrorX(0)
@@ -78,48 +79,75 @@ mHNLSym = "m#lower[0.3]{#scale[0.7]{N}}"
 limitGreen = style.newColorHLS(0.34,0.45,0.95)
 limitYellow = style.newColorHLS(0.15,0.68,0.98)
 
+def scenarioTitle(Ve,Vmu,Vtau):
+    Ve = str(Ve)
+    Vmu = str(Vmu)
+    Vtau = str(Vtau)
+    
+    
+    if Ve=="0":
+        Ve = "#kern[-0.8]{ }"+Ve
+    if Vmu=="0":
+        Vmu = "#kern[-0.8]{ }"+Vmu
+    if Vtau=="0":
+        Vtau = "#kern[-0.8]{ }"+Vtau
+
+    return veSym+"#kern[-0.5]{ }:#kern[-0.5]{ }"+vmuSym+"#kern[-0.4]{ }:#kern[-0.4]{ }"+vtauSym+"#kern[0.1]{ }=#kern[0.1]{ }"+str(Ve)+"#kern[-0.5]{ }:#kern[-0.5]{ }"+str(Vmu)+"#kern[-0.5]{ }:#kern[-0.5]{ }"+str(Vtau)
+
 scenarios = {
     'emutau': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 1 : 1 : 1",
+        'title': scenarioTitle(1,1,1),
         'ylabel': ve2Sym+" = "+vmu2Sym+" = "+vtau2Sym,
         'couplingWeight':1.0,
         'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/3.)**2
     },
     'ee': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 1 : 0 : 0",
+        'title': scenarioTitle(1,0,0),
         'ylabel': ve2Sym,
         'couplingWeight':2.0,
         'couplingFct': lambda couplingSum2Value: couplingSum2Value
     },
+    'etau': {
+        'title': scenarioTitle(1,0,1),
+        'ylabel': ve2Sym+" = "+vtau2Sym,
+        'couplingWeight':47.0,
+        'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/2.)**2
+    },
     'tautau': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 0 : 0 : 1",
+        'title': scenarioTitle(0,0,1),
         'ylabel': vtau2Sym,
         'couplingWeight':67.0,
         'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/2.)**2
     },
     'emu': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 1 : 1 : 0",
-        'ylabel': vmu2Sym,
+        'title': scenarioTitle(1,1,0),
+        'ylabel': ve2Sym+" = "+vmu2Sym,
         'couplingWeight':7.0,
         'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/2.)**2
     },
     'mumu': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 0 : 1 : 0",
+        'title': scenarioTitle(0,1,0),
         'ylabel': vmu2Sym,
         'couplingWeight':12.0,
         'couplingFct': lambda couplingSum2Value: couplingSum2Value
+    },
+    'mutau': {
+        'title': scenarioTitle(0,1,1),
+        'ylabel': vmu2Sym+" = "+vtau2Sym,
+        'couplingWeight':52.0,
+        'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/2.)**2
     }
 }
-
+'''
 scenarios = {
     'mumu': {
-        'title': veSym+" : "+vmuSym+" : "+vtauSym+" = 0 : 1 : 0",
+        'title': scenarioTitle(0,1,0),
         'ylabel': vmu2Sym,
         'couplingWeight':12.0,
         'couplingFct': lambda couplingSum2Value: couplingSum2Value
     }
 }
-
+'''
 
 '''
 _dict = {}
@@ -632,9 +660,9 @@ for year in years:
             cv = style.makeCanvas("cvLimit"+str(random.random()),700,670)
             cv.SetPad(0.0, 0.0, 1.0, 1.0)
             cv.SetFillStyle(4000)
-            cvxmin=0.14
+            cvxmin=0.145
             #cvxmax=0.8
-            cvxmax=0.96
+            cvxmax=0.965
             cvymin=0.13
             cvymax=0.92
             cv.SetBorderMode(0)
@@ -664,6 +692,7 @@ for year in years:
                 200,np.logspace(math.log10(1.),math.log10(20.),201),
                 200,np.logspace(-7,0,201),
             )
+            xsec2DHist.GetYaxis().SetTitleOffset(1.4)
             xsec2DHist.GetXaxis().SetLabelSize(0)
             xsec2DHist.GetXaxis().SetTickLength(0.0)
             '''
@@ -795,7 +824,7 @@ for year in years:
             
             
             
-            pCMS=ROOT.TPaveText(cvxmin+0.025,cvymax-0.025,cvxmin+0.025,cvymax-0.025,"NDC")
+            pCMS=ROOT.TPaveText(cvxmin+0.035,cvymax-0.025,cvxmin+0.035,cvymax-0.025,"NDC")
             pCMS.SetFillColor(ROOT.kWhite)
             pCMS.SetBorderSize(0)
             pCMS.SetTextFont(63)
@@ -804,14 +833,34 @@ for year in years:
             pCMS.AddText("CMS")
             pCMS.Draw("Same")
             
-            pPreliminary=ROOT.TPaveText(cvxmin+0.115,cvymax-0.025,cvxmin+0.115,cvymax-0.025,"NDC")
+            pPreliminary=ROOT.TPaveText(cvxmin+0.125,cvymax-0.025,cvxmin+0.125,cvymax-0.025,"NDC")
             pPreliminary.SetFillColor(ROOT.kWhite)
             pPreliminary.SetBorderSize(0)
             pPreliminary.SetTextFont(53)
             pPreliminary.SetTextSize(27)
             pPreliminary.SetTextAlign(13)
             pPreliminary.AddText("Preliminary")
-            pPreliminary.Draw("Same")
+            
+            
+            '''
+            couplingTitle = ROOT.TPaveText(cvxmin+0.025,cvymax-0.075,cvxmin+0.025,cvymax-0.075,"NDC")
+            couplingTitle.SetBorderSize(0)
+            couplingTitle.SetFillStyle(0)
+            couplingTitle.SetTextFont(63)
+            couplingTitle.SetTextSize(27)
+            couplingTitle.SetTextAlign(13)
+            couplingTitle.AddText(scenarioCfg['title'])
+            couplingTitle.Draw("Same")
+            '''
+            
+            couplingTitle = ROOT.TPaveText(cvxmin,0.94,cvxmin,0.94,"NDC")
+            couplingTitle.SetBorderSize(0)
+            couplingTitle.SetFillStyle(0)
+            couplingTitle.SetTextFont(43)
+            couplingTitle.SetTextSize(30)
+            couplingTitle.SetTextAlign(11)
+            couplingTitle.AddText(scenarioCfg['title'])
+            couplingTitle.Draw("Same")
 
             pLumi=ROOT.TPaveText(cvxmax,0.94,cvxmax,0.94,"NDC")
             pLumi.SetFillColor(ROOT.kWhite)
@@ -822,26 +871,49 @@ for year in years:
             pLumi.AddText(lumi[year]+"#kern[-0.5]{ }fb#lower[-0.7]{#scale[0.7]{-1}} (13 TeV)")
             pLumi.Draw("Same")
             
-            legendTitle = ROOT.TPaveText(cvxmax-0.37,cvymax-0.02,cvxmax-0.03,cvymax-0.02-0.048,"NDC")
+            legendTitle = ROOT.TPaveText(cvxmin+0.035,cvymax-0.02-0.04,cvxmin+0.035,cvymax-0.02-0.04-2*0.037,"NDC")
             legendTitle.SetBorderSize(0)
             legendTitle.SetFillStyle(0)
             legendTitle.SetTextFont(43)
-            legendTitle.SetTextSize(25)
+            legendTitle.SetTextSize(20)
+            legendTitle.SetTextAlign(13)
+            if hnl_type=="dirac":
+                legendTitle.AddText("Dirac HNL production")
+            else:
+                legendTitle.AddText("Majorana HNL production")
             legendTitle.AddText("95% CL upper limits")
             legendTitle.Draw("Same")
             
-            legend = ROOT.TLegend(cvxmax-0.37,cvymax-0.02-0.048,cvxmax-0.03,cvymax-0.02-0.048-0.048*4,"","NDC")
+            legend = ROOT.TLegend(cvxmin+0.035,cvymax-0.02-0.055-2*0.037,cvxmin+0.4,cvymax-0.02-0.055-2*0.037-0.037*4,"","NDC")
             legend.SetBorderSize(0)
             legend.SetFillStyle(0)
             legend.SetTextFont(43)
-            legend.SetTextSize(25)
-            
+            legend.SetTextSize(20)
             legend.AddEntry(obsGraphLimit,"Observed","L")
-            legend.AddEntry(expGraphLimit,"Expected","L")
-            legend.AddEntry(exp68GraphLimit,"#pm#kern[-0.6]{ }1 std. deviation","F")
-            legend.AddEntry(exp95GraphLimit,"#pm#kern[-0.6]{ }2 std. deviation","F")
-            
+            legend.AddEntry(expGraphLimit,"Expected (median)","L")
+            legend.AddEntry(exp68GraphLimit,"Expected (68% quantile)","F")
+            legend.AddEntry(exp95GraphLimit,"Expected (95% quantile)","F")
             legend.Draw("Same")
+            
+            refEntries = refLimits.getRefs(hnl_type,int(scenarioCfg['couplingWeight']))
+            
+            legendRefs = ROOT.TLegend(cvxmax-0.37,cvymax-0.028,cvxmax-0.03,cvymax-0.028-0.037*len(refEntries),"","NDC")
+            legendRefs.SetBorderSize(0)
+            legendRefs.SetFillStyle(0)
+            legendRefs.SetTextFont(43)
+            legendRefs.SetTextSize(20)
+            
+            for refEntry in refEntries:
+                
+                if refEntry[0]:
+                    legendRefs.AddEntry(refEntry[0],refEntry[1],"L")
+                    refEntry[0].Draw("L")
+                else:
+                    legendRefs.AddEntry("",refEntry[1],"")
+            
+            legendRefs.Draw("Same")
+            
+            
             ROOT.gPad.RedrawAxis()
             
             for xtick in [1,2,3,4,6,8,10,14,20]:
@@ -871,9 +943,10 @@ for year in years:
             
             #cv.Update()
             cv.Print(scenarioName+"_"+hnl_type+"_"+year+"_xsec.pdf")
-                
-                
-                
+            cv.Print(scenarioName+"_"+hnl_type+"_"+year+"_xsec.png")
+            pPreliminary.Draw("Same")
+            cv.Print(scenarioName+"_"+hnl_type+"_"+year+"_xsec_PAS.pdf")
+            cv.Print(scenarioName+"_"+hnl_type+"_"+year+"_xsec_PAS.png") 
                 
             '''
             cv = style.makeCanvas("cvXsec"+str(random.random()),700,670)
