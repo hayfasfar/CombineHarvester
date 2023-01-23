@@ -12,9 +12,9 @@ def get_graph(filename, histname):
     return graph
     
     
-color_ATLAS = style.newColorHLS(0.60,0.55,0.90)
-color_LHCb = style.newColorHLS(0.11,0.50,0.95)
-color_CMS = style.newColorHLS(0.81,0.65,0.90)
+color_ATLAS = style.newColorHLS(0.60,0.55,0.94)
+color_LHCb = style.newColorHLS(0.10,0.51,0.98)#style.newColorHLS(0.80,0.53,0.98)
+color_CMS = style.newColorHLS(0.02,0.52,0.97)
 
 
 def getRefs(hnl_type,scenario):

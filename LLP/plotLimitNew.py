@@ -145,7 +145,7 @@ scenarios = {
         'ylabel': vmu2Sym,
         'couplingWeight':12.0,
         'couplingFct': lambda couplingSum2Value: couplingSum2Value
-    }
+    },
 }
 '''
 
@@ -425,7 +425,7 @@ def traceContour(logXsecTheoryFct, logXsecLimitFct):
                     currentPoint[0]-stepSize*(grad[1]*math.cos(minAngle)-grad[0]*math.sin(minAngle)),
                     currentPoint[1]+stepSize*(grad[0]*math.cos(minAngle)+grad[1]*math.sin(minAngle))
                 ]
-            if 10**newPoint[0]>20.:
+            if 10**newPoint[0]>20. or 10**newPoint[0]<1.:
                 return newPoint,stepSize,minAngle
                 
                 
@@ -493,8 +493,7 @@ def traceContour(logXsecTheoryFct, logXsecLimitFct):
         
         if (10**currentLogMass<1. or 10**currentLogMass>20.):
             break
-        if (currentLogCoupling2<-7 or currentLogCoupling2>0.):
-            break
+
         if (iteration>100):
             break
         
@@ -559,8 +558,7 @@ def traceContour(logXsecTheoryFct, logXsecLimitFct):
         
         if (10**currentLogMass<1. or 10**currentLogMass>20.):
             break
-        if (currentLogCoupling2<-7 or currentLogCoupling2>0.):
-            break
+        
         if (iteration>100):
             break
         
@@ -570,7 +568,7 @@ def traceContour(logXsecTheoryFct, logXsecLimitFct):
         
         print iteration,10**currentLogMass,currentLogCoupling2
         
-    return np.array(contourMass,dtype=np.float64),np.array(contourCoupling2,dtype=np.float64)
+    return np.clip(np.array(contourMass,dtype=np.float64),1.,20.),np.clip(np.array(contourCoupling2,dtype=np.float64),1e-7,1)
     #print startingCoupling2
 
 
