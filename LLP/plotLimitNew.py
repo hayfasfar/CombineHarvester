@@ -581,7 +581,7 @@ with open("/vols/cms/LLP/gridpackLookupTable.json") as lookup_table_file:
 
 for year in years:
     for scenarioName,scenarioCfg in scenarios.items():
-        for hnl_type in ["dirac"]:#,"majorana"]:
+        for hnl_type in ["majorana","dirac"]:#,"majorana"]:
             print("Plotting coupling scenario: "+str(scenarioName),hnl_type,year)
 
 
@@ -878,9 +878,11 @@ for year in years:
             legendTitle.SetTextSize(20)
             legendTitle.SetTextAlign(13)
             if hnl_type=="dirac":
-                legendTitle.AddText("Dirac HNL production")
+                ttext = legendTitle.AddText("Dirac HNL production")
+                ttext.SetTextFont(63)
             else:
-                legendTitle.AddText("Majorana HNL production")
+                ttext = legendTitle.AddText("Majorana HNL production")
+                ttext.SetTextFont(63)
             legendTitle.AddText("95% CL upper limits")
             legendTitle.Draw("Same")
             
@@ -897,21 +899,25 @@ for year in years:
             
             refEntries = refLimits.getRefs(hnl_type,int(scenarioCfg['couplingWeight']))
             
-            legendRefs = ROOT.TLegend(cvxmax-0.37,cvymax-0.028,cvxmax-0.03,cvymax-0.028-0.037*len(refEntries),"","NDC")
-            legendRefs.SetBorderSize(0)
-            legendRefs.SetFillStyle(0)
-            legendRefs.SetTextFont(43)
-            legendRefs.SetTextSize(20)
-            
+            yrefOffset = cvymax-0.03
             for refEntry in refEntries:
-                
-                if refEntry[0]:
-                    legendRefs.AddEntry(refEntry[0],refEntry[1],"L")
-                    refEntry[0].Draw("L")
-                else:
-                    legendRefs.AddEntry("",refEntry[1],"")
+                legendRefs = ROOT.TLegend(cvxmax-0.32,yrefOffset,cvxmax-0.03,yrefOffset-0.031*len(refEntry),"","NDC")
+                rootObj.append(legendRefs)
+                yrefOffset -= 0.031*len(refEntry)+0.012
+                legendRefs.SetBorderSize(0)
+                legendRefs.SetFillStyle(0)
+                legendRefs.SetTextFont(43)
+                legendRefs.SetTextSize(16)
             
-            legendRefs.Draw("Same")
+                for entry in refEntry:
+                    
+                    if entry[0]:
+                        legendRefs.AddEntry(entry[0],entry[1],"L")
+                        entry[0].Draw("L")
+                    else:
+                        legendRefs.AddEntry("",entry[1],"")
+            
+                legendRefs.Draw("Same")
             
             
             ROOT.gPad.RedrawAxis()
@@ -933,7 +939,7 @@ for year in years:
                 tickText.Draw("Same")
                 
             for xtick in [5,7,9,11,12,13,15,16,17,18,19]:
-                tickLine = ROOT.TLine(xtick,1.18e-7,xtick,1e-7)
+                tickLine = ROOT.TLine(xtick,1.2e-7,xtick,1e-7)
                 rootObj.append(tickLine)
                 tickLine.Draw("Same")
                 
