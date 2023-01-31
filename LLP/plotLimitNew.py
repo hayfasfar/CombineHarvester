@@ -149,16 +149,6 @@ scenarios = {
 }
 '''
 
-'''
-_dict = {}
-#coupling_dict[1.0] = ["emutau", , lambda couplings: couplings['Vmu']**2]
-#coupling_dict[2.0] = ["ee", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 0", lambda couplings: couplings['Vmu']**2]
-#coupling_dict[7.0] = ["emu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 0", lambda couplings: couplings['Vmu']**2]
-coupling_dict[12.0] = ["mumu", , ]
-#coupling_dict[47.0] = ["etau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 1", lambda couplings: couplings['Vmu']**2]
-#coupling_dict[52.0] = ["mutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 1", lambda couplings: couplings['Vmu']**2]
-'''
-
 
 
 
