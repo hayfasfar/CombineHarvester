@@ -1,7 +1,6 @@
 import ROOT
-import numpy
 import ctypes
-
+import numpy
 '''
 some style suggestions
 * canvas size: 800 x 670
@@ -23,9 +22,6 @@ ROOT.gStyle.SetOptTitle(0)
 
 ROOT.gStyle.SetCanvasBorderMode(0)
 ROOT.gStyle.SetCanvasColor(ROOT.kWhite)
-ROOT.gStyle.SetPadBottomMargin(0.12)
-ROOT.gStyle.SetPadLeftMargin(0.15)
-ROOT.gStyle.SetPadRightMargin(0.1)
 
 ROOT.gStyle.SetPadBorderMode(0)
 ROOT.gStyle.SetPadColor(ROOT.kWhite)
@@ -33,13 +29,15 @@ ROOT.gStyle.SetGridColor(ROOT.kBlack)
 ROOT.gStyle.SetGridStyle(2)
 ROOT.gStyle.SetGridWidth(1)
 
+'''
 ROOT.gStyle.SetFrameBorderMode(0)
 ROOT.gStyle.SetFrameBorderSize(0)
-ROOT.gStyle.SetFrameFillColor(0)
-ROOT.gStyle.SetFrameFillStyle(0)
+#ROOT.gStyle.SetFrameFillColor(0)
+#ROOT.gStyle.SetFrameFillStyle(0)
 ROOT.gStyle.SetFrameLineColor(1)
 ROOT.gStyle.SetFrameLineStyle(1)
 ROOT.gStyle.SetFrameLineWidth(0)
+'''
 
 ROOT.gStyle.SetEndErrorSize(2)
 #ROOT.gStyle.SetErrorX(0.)
@@ -50,7 +48,7 @@ ROOT.gStyle.SetHatchesLineWidth(2)
 
 ROOT.gStyle.SetTitleColor(1, "XYZ")
 ROOT.gStyle.SetTitleFont(43, "XYZ")
-ROOT.gStyle.SetTitleSize(33, "XYZ")
+ROOT.gStyle.SetTitleSize(32, "XYZ")
 ROOT.gStyle.SetTitleXOffset(1.135)
 ROOT.gStyle.SetTitleOffset(1.32, "YZ")
 
@@ -71,7 +69,7 @@ ROOT.gStyle.SetPaperSize(8.0*1.35,6.7*1.35)
 ROOT.TGaxis.SetMaxDigits(3)
 ROOT.gStyle.SetLineScalePS(2)
 
-ROOT.gStyle.SetPalette(1)
+ROOT.gStyle.SetPalette(57)
 ROOT.gStyle.SetPaintTextFormat(".1f")
 
 colors = []
@@ -104,6 +102,12 @@ def makeColorTable(reverse=False):
         [0.,newColorHLS(0.56, 0.65, 0.7)],
         [0.,newColorHLS(0.52, 1., 1.)],
     ]
+
+    colorList = [
+    [0.,newColorHLS(0.9, 0.5, 0.9)],
+    [0.,newColorHLS(0.9, 0.88, 1.0)],
+    [0.,newColorHLS(0.9, 0.95, 1.0)],
+    ]
     
     if reverse:
         colorList = reversed(colorList)
@@ -117,25 +121,15 @@ def makeColorTable(reverse=False):
         else:
             color[0] = ((color[1].GetLight()-lumiMin)/(lumiMax-lumiMin))
 
+    stops = numpy.array(list(map(lambda x:x[0],colorList)))
+    red   = numpy.array(list(map(lambda x:x[1].GetRed(),colorList)))
+    green = numpy.array(list(map(lambda x:x[1].GetGreen(),colorList)))
+    blue  = numpy.array(list(map(lambda x:x[1].GetBlue(),colorList)))
 
-    stops = numpy.array(map(lambda x:x[0],colorList))
-    red   = numpy.array(map(lambda x:x[1].GetRed(),colorList))
-    green = numpy.array(map(lambda x:x[1].GetGreen(),colorList))
-    blue  = numpy.array(map(lambda x:x[1].GetBlue(),colorList))
-
-    start=ROOT.TColor.CreateGradientColorTable(len(stops), stops, red, green, blue, 200)
+    start=ROOT.TColor.CreateGradientColorTable(stops.size, stops, red, green, blue, 200)
     ROOT.gStyle.SetNumberContours(200)
-
-
-#colors used in limits
-colorU = newColorHLS(0.76,0.45,0.8)
-colorUsys = newColorHLS(0.72,0.9,0.5)
-colorU_SUS = newColorHLS(0.68,0.3,0.7)
-
-colorC = newColorHLS(0.07,0.45,0.8)
-colorCsys = newColorHLS(0.07,0.9,0.5)
-colorC_SUS = newColorHLS(0.0,0.4,0.8)
-
+    return
+    
 #colors used in CR plots
 znunuColor = newColorRGB(0.3,0.75,0.95)
 multijetColor = newColorRGB(0.85,0.85,0.85)
@@ -144,7 +138,7 @@ dyColor = newColorRGB(0.3,0.75,0.95)
 wjetColor = newColorRGB(0.36,0.78,0.4)
 
 mistagColor = newColorHLS(0.71,0.87,0.6)
-    
+
 
 rootObj = []
 
@@ -163,11 +157,11 @@ def makeLegend(x1,y1,x2,y2):
     rootObj.append(legend)
     return legend
     
-def makeCMSText(x1,y1,additionalText=None,dx=0.088):
+def makeCMSText(x1,y1,additionalText=None,dx=0.088, size=30):
     pTextCMS = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
     pTextCMS.AddText("CMS")
     pTextCMS.SetTextFont(63)
-    pTextCMS.SetTextSize(31)
+    pTextCMS.SetTextSize(size)
     pTextCMS.SetTextAlign(13)
     rootObj.append(pTextCMS)
     pTextCMS.Draw("Same")
@@ -176,33 +170,32 @@ def makeCMSText(x1,y1,additionalText=None,dx=0.088):
         pTextAdd = ROOT.TPaveText(x1+dx,y1,x1+dx,y1,"NDC")
         pTextAdd.AddText(additionalText)
         pTextAdd.SetTextFont(53)
-        pTextAdd.SetTextSize(31)
+        pTextAdd.SetTextSize(size)
         pTextAdd.SetTextAlign(13)
         rootObj.append(pTextAdd)
         pTextAdd.Draw("Same")
     return pTextCMS
     
-def makeLumiText(x1,y1,lumi="35.9",year="2016"):
+def makeLumiText(x1, y1, lumi, year, size=30):
     pText = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
-    pText.AddText("%s fb#lower[-0.8]{#scale[0.7]{-1}} (%s)" % (lumi, year))
+    pText.AddText(str(lumi)+" fb#lower[-0.8]{#scale[0.7]{-1}} (" + year + ")")
     pText.SetTextFont(63)
-    pText.SetTextSize(31)
-    pText.SetTextAlign(32)
+    pText.SetTextSize(size)
+    pText.SetTextAlign(13)
     rootObj.append(pText)
     pText.Draw("Same")
     return pText
  
-def makeText(x1,y1,x2,y2,text):
-    pText = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
+def makeText(x1,y1,x2, y2, text,size=30):
+    pText = ROOT.TPaveText(x1,y1,x2,y2,"NBNDC")
     pText.AddText(text)
     pText.SetTextFont(43)
-    pText.SetTextSize(28)
-    pText.SetTextAlign(11)
+    pText.SetTextSize(size)
+    pText.SetTextAlign(13)
+    pText.SetFillColorAlpha(ROOT.kWhite, 0.9)
     rootObj.append(pText)
-    pText.Draw("SAME")
+    pText.Draw()
     return pText
-
-
 
 ptSymbol = "p#kern[-0.8]{ }#lower[0.3]{#scale[0.7]{T}}"
 metSymbol = ptSymbol+"#kern[-2.3]{ }#lower[-0.8]{#scale[0.7]{miss}}"
@@ -232,6 +225,40 @@ def ctauSymbol(logctau=-3):
         ["c#tau#lower[0.3]{#scale[0.5]{0}}#kern[-0.5]{ }=#kern[-0.5]{ }100#kern[-0.2]{ }m"],
     ]
     return symbols[logctau+3]
+
+
+def clamp(val, minimum=0, maximum=255):
+    if val < minimum: return minimum
+    if val > maximum:
+        return maximum
+    return int(val)
+
+def colorscale(hexstr, scalefactor):
+    """
+    Scales a hex string by ``scalefactor``. Returns scaled hex string.
+
+    To darken the color, use a float value between 0 and 1.
+    To brighten the color, use a float value greater than 1.
+
+    >>> colorscale("#DF3C3C", .5)
+    #6F1E1E
+    >>> colorscale("#52D24F", 1.6)
+    #83FF7E
+    >>> colorscale("#4F75D2", 1)
+    #4F75D2
+    """
+
+    hexstr = hexstr.strip('#')
+
+    if scalefactor < 0 or len(hexstr) != 6:
+        return hexstr
+
+    r, g, b = int(hexstr[:2], 16), int(hexstr[2:4], 16), int(hexstr[4:], 16)
+    r = clamp(r * scalefactor)
+    g = clamp(g * scalefactor)
+    b = clamp(b * scalefactor)
+
+    return "#%02x%02x%02x" % (r, g, b)
     
     
     
