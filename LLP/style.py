@@ -129,6 +129,15 @@ def makeColorTable(reverse=False):
     start=ROOT.TColor.CreateGradientColorTable(stops.size, stops, red, green, blue, 200)
     ROOT.gStyle.SetNumberContours(200)
     return
+    
+#colors used in CR plots
+znunuColor = newColorRGB(0.3,0.75,0.95)
+multijetColor = newColorRGB(0.85,0.85,0.85)
+topBkgColor = newColorRGB(0.98,0.8,0.05)
+dyColor = newColorRGB(0.3,0.75,0.95)
+wjetColor = newColorRGB(0.36,0.78,0.4)
+
+mistagColor = newColorHLS(0.71,0.87,0.6)
 
 
 rootObj = []
