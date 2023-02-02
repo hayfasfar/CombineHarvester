@@ -78,12 +78,13 @@ lumi = {"2016": 36, "2017": 42, "2018": 60, "combined": 138}
 years = ["2016", "2017", "2018", "combined"]
 
 coupling_dict = {}
-#coupling_dict[1.0] = ["emutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 1"]
-#coupling_dict[2.0] = ["ee", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 0"]
-#coupling_dict[7.0] = ["emu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 0"]
+coupling_dict[1.0] = ["emutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 1"]
+coupling_dict[2.0] = ["ee", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 0"]
+coupling_dict[7.0] = ["emu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 1 : 0"]
 coupling_dict[12.0] = ["mumu", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 0"]
-#coupling_dict[47.0] = ["etau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 1"]
-#coupling_dict[52.0] = ["mutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 1"]
+coupling_dict[47.0] = ["etau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 1 : 0 : 1"]
+coupling_dict[52.0] = ["mutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 1 : 1"]
+coupling_dict[67.0] = ["mutau", "V_{Ne} : V_{N#mu} : V_{N#tau} = 0 : 0 : 1"]
 
 n_bins = 200
 
@@ -173,7 +174,7 @@ for year in years:
                 results_obs = interpolate.griddata(mass_coupling_pair, log_observed_points, (grid_x, grid_y), method=fit_method)
 
 
-            hist_mu = ROOT.TH2D("mu"+hnl_type+str(scenario), "mu", n_bins-1, mass_range, n_bins-1, coupling_range)
+            hist_mu = ROOT.TH2F("mu"+hnl_type+str(scenario), "mu", n_bins-1, mass_range, n_bins-1, coupling_range)
             crossing_points = []
             masses_at_crossing_points = []
             errors_up = []
@@ -224,6 +225,7 @@ for year in years:
                     mu_minus_two_values.append(get_mu(theory, exp_minus_two))
 
                     hist_mu.SetBinContent(i+1, j+1, np.power(10, get_mu(theory, exp)))
+                    #hist_mu.SetBinContent(i+1, j+1, np.power(10, get_mu(theory, obs)))
 
     
                 crossing_point = np.power(10, interpolate_point(coupling_values, mu_values))
@@ -244,6 +246,9 @@ for year in years:
 
                 green.SetPoint(  2*n_bins-1-i, mass, crossing_point_minus ) # - 1 sigma
                 yellow.SetPoint( 2*n_bins-1-i, mass, crossing_point_minus_two ) # - 2 sigma
+                if year == "2016" and hnl_type == "majorana" and mass > 8. and mass < 16.: 
+                  print "2sigmas nbins ", 2*n_bins-1-i , "mass" , mass, "crossing points " , crossing_point_minus_two
+                  print " 1sigma nbins ", 2*n_bins-1-i , "mass" , mass, "crossing points " , crossing_point_minus
 
             points_graph = ROOT.TGraph(npoints, array('d', mass_coupling_pair.T[0]), array('d',np.power(10, mass_coupling_pair.T[1])))
             points_graph.SetMarkerStyle(33)
@@ -262,6 +267,7 @@ for year in years:
             #hist_mu.GetZaxis().SetTitle("#sigma/#sigma_{th}")
             hist_mu.Draw("COLZ")
             hist_mu.SetMaximum(1e3)
+
 
             points_graph.Draw("P SAME")
 
@@ -332,8 +338,8 @@ for year in years:
             # Table 5: prompt HNL, Ve Dirac+Majorana
 
             if scenario == 12:
-                hist_displaced_dirac = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 3/Graph1D_y1")
-                hist_displaced_majorana = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 4/Graph1D_y1")
+                hist_displaced_dirac = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH mu Dirac model/Graph1D_y1")
+                hist_displaced_majorana = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH mu Majorana model/Graph1D_y1")
                 hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 6/Graph1D_y1")
                 hist_displaced_dirac.SetLineColor(ROOT.kBlue)
                 hist_displaced_majorana.SetLineColor(ROOT.kBlue)
@@ -416,6 +422,8 @@ for year in years:
 
             if scenario == 2:
                 if hnl_type == "majorana":
+                    hist_displaced_dirac = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH e Dirac model/Graph1D_y1")
+                    hist_displaced_majorana = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH e Majorana model/Graph1D_y1")
                     hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
                     hist_prompt.SetLineStyle(3)
                     hist_prompt.SetLineWidth(3)
@@ -436,6 +444,18 @@ for year in years:
                 graph_exo_20_009.SetMarkerSize(0)
                 graph_exo_20_009.SetLineStyle(5)
                 graph_exo_20_009.Draw("SAME L")
+                hist_displaced_dirac.SetLineColor(ROOT.kBlue)
+                hist_displaced_majorana.SetLineColor(ROOT.kBlue)
+                hist_displaced_dirac.SetLineWidth(2)
+                hist_displaced_majorana.SetLineWidth(2)
+                if hnl_type == "dirac":
+                    hist_displaced_dirac.Draw("SAME")
+                    leg.AddEntry(hist_displaced_dirac, "ATLAS displaced")
+
+                elif hnl_type == "majorana":
+                    hist_displaced_majorana.Draw("SAME")
+                    leg.AddEntry(hist_displaced_majorana, "ATLAS displaced")
+
                 leg.AddEntry(graph_exo_20_009, "EXO-20-009")
 
                 leg.AddEntry(median, "", "")

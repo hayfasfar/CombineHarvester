@@ -2,7 +2,7 @@ import ROOT
 ROOT.gROOT.SetBatch(True)
 import style
 #ROOT.gStyle.SetErrorX(0)
-
+import math
 import json
 
 def make_pretty(s):
@@ -96,8 +96,18 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
         err_pred = pred_hist.GetBinError(j+1)
 
         ratio = obs/pred
-        pull = obs-pred/err_pred
-
+        #pull = obs-pred/err_pred
+        if obs - err_pred**2 <= 0 :
+           pull = 0
+        else :
+          if obs > 0 :
+            #print "predict is " , pred , "error " , err_pred , " obs " , obs
+            pull = (obs-pred)/math.sqrt((obs - err_pred**2))
+          elif obs == 0 :
+            #print "predict is " , pred , "error " , err_pred
+            obs = 1.8
+            pull = (obs-pred)/math.sqrt((obs - err_pred**2))
+        print pull
         err_hist_ratio.SetBinContent(j+1, 1)
         err_hist_ratio.SetBinError(j+1, err_pred/pred)
         residuals.SetBinError(j+1, err_obs*ratio/(obs+1e-9))
@@ -107,14 +117,15 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     cv.SetLeftMargin(0.13)
     cv.SetRightMargin(0.1)
 
-    pad1 = ROOT.TPad("pad1","pad1",0,0.25,1,1)
+    pad1 = ROOT.TPad("pad1","pad1",0,0.26,1,1)
     pad1.SetBottomMargin(0.02)
     pad1.SetLeftMargin(0.13)
     pad1.SetRightMargin(0.1)
     pad1.SetBorderMode(0)
 
-    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.23)
-    pad2.SetTopMargin(0)
+    pad2 = ROOT.TPad("pad2","pad2",0,0,1,0.26)
+    pad2.SetFillStyle(4000)
+    pad2.SetTopMargin(0.0)
     pad2.SetBottomMargin(0.3)
     pad2.SetLeftMargin(0.13)
     pad2.SetRightMargin(0.1)
@@ -122,18 +133,18 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
 
     pad1.Draw()
     pad2.Draw()
-
-    text = style.makeText(0.2, 0.88, 0.7, 0.88, topology)
+    style.makeCMSText(0.13, 0.97)#, additionalText="Simulation Preliminary")
+    text = style.makeText(0.43, 0.87, 0.7, 0.87, topology)
     text.SetTextFont(63)
     text.SetTextSize(31)
 
-    legend = style.makeLegend(0.54, 0.74, 0.79, 0.86)
+    legend = style.makeLegend(0.6, 0.74, 0.8, 0.88)
     legend.AddEntry(obs_hist, 'Data', 'lp')
     legend.AddEntry(pred_hist, 'Background', "lf")
-    legend.AddEntry(pred_hist_prefit, 'Background (prefit)', "l")
+    #legend.AddEntry(pred_hist_prefit, 'Background (prefit)', "l")
 
 
-    legend_signal = style.makeLegend(0.14, 0.76, 0.5, 0.87)
+    legend_signal = style.makeLegend(0.13, 0.74, 0.5, 0.85)
     legend_signal.SetTextSize(19)
     legend_signal.AddEntry(signal_hist_1, "m_{N} = 4.5 GeV, c#tau_{0} = 100 mm")
     legend_signal.AddEntry(signal_hist_2, "m_{N} = 10 GeV, c#tau_{0} = 1 mm")
@@ -155,17 +166,17 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     l_OS_SS.SetLineStyle(2)
     l_OS_SS.SetLineWidth(3)
 
-    text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 6*pred_hist.GetMaximum(), "OS")
-    text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 6*pred_hist.GetMaximum(), "SS")
+    text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 20*pred_hist.GetMaximum(), "OS")
+    text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 20*pred_hist.GetMaximum(), "SS")
 
-    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
-    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
+    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, 1.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
+    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5,1.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
 
-    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
-    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
+    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, 1.5*pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
+    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, 1.5*pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
 
-    text_displaced = ROOT.TLatex(obs_hist.GetNbinsX()*3/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
-    text_displaced_2 = ROOT.TLatex(obs_hist.GetNbinsX()*6/6-2.5, pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
+    text_displaced = ROOT.TLatex(obs_hist.GetNbinsX()*3/6-2.5, 1.5*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
+    text_displaced_2 = ROOT.TLatex(obs_hist.GetNbinsX()*6/6-2.5,1.5*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
 
     text_prompt.SetTextAlign(22)
     text_prompt_2.SetTextAlign(22)
@@ -177,35 +188,36 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, signal_hist_1, signal_his
     text_OS.SetTextAlign(22)
     text_SS.SetTextAlign(22)
 
-    legend.AddEntry(err_hist, 'stat. unc', 'f')
+    legend.AddEntry(err_hist, 'Unc.', 'f')
 
     pad2.cd()
-    residuals.GetYaxis().SetTitle("Obs/Pred")
+    residuals.GetYaxis().SetTitle("Data/Bkg.")
     residuals.GetYaxis().SetTitleOffset(1)
     residuals.GetYaxis().SetNdivisions(504)
     #n1 + 100*n2
     residuals.SetMarkerColor(1)
     residuals.SetLineColor(1)
-    residuals.GetYaxis().SetRangeUser(0, 2.3)
-    residuals.Draw("P")
+    residuals.GetYaxis().SetRangeUser(0, 3.5)
     lres = ROOT.TLine(-0.5, 1., n_bins_total-0.5, 1.)
+    residuals.Draw("P")
     lres.Draw("SAME")
     err_hist_ratio.Draw("E2 SAME")
+    residuals.Draw("P SAME")
 
     pad1.cd()
     pad1.SetLogy()
     pred_hist.SetMinimum(1e-3)
-    pred_hist_prefit.SetMinimum(1e-3)
+    #pred_hist_prefit.SetMinimum(1e-3)
     err_hist.SetMinimum(1e-3)
     obs_hist.SetMinimum(1e-3)
     signal_hist_1.SetMinimum(1e-3)
     signal_hist_2.SetMinimum(1e-3)
-    pred_hist.GetYaxis().SetRangeUser(0.05 , 4000*pred_hist.GetMaximum())
+    pred_hist.GetYaxis().SetRangeUser(0.05 , 50000*pred_hist.GetMaximum())
     pred_hist.GetXaxis().SetLabelSize(0)
 
     pred_hist.Draw("HIST")
     err_hist.Draw("E2 SAME")
-    pred_hist_prefit.Draw("HIST SAME")
+    #pred_hist_prefit.Draw("HIST SAME")
     obs_hist.Draw("HIST P L E SAME")
     signal_hist_1.Draw("HIST SAME")
     signal_hist_2.Draw("HIST SAME")
@@ -249,7 +261,7 @@ root_file = "fitDiagnostics.root"
 signal = "HNL_majorana_all_ctau1p0e02_massHNL4p5_Vall1p016e-03"
 signal_2 = "HNL_majorana_all_ctau1p0e00_massHNL10p0_Vall1p177e-03"
 
-signal_hist_path = "/vols/cms/hsfar/hists_merged/"
+signal_hist_path = "/vols/cms/hsfar/hists_merged2/"
 
 root_file_signal_1 = signal_hist_path+signal+"_YEAR.root"
 root_file_signal_2 = signal_hist_path+signal_2+"_YEAR.root"
@@ -299,8 +311,8 @@ for topology in ["boosted", "resolved"]:
                 hist_pred_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_pred_prefit_input = get_hist(root_file, "shapes_prefit/ch"+str(i+1)+"_"+category+"_D/total_background")
                 hist_obs_input = get_hist(root_file, "shapes_fit_b/ch"+str(i+1)+"_"+category+"_D/data")
-                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_12")
-                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_12")
+                hist_signal_input = get_hist(root_file_signal_1.replace("YEAR", year), category+"_D/HNL_coupling_1")
+                hist_signal2_input = get_hist(root_file_signal_2.replace("YEAR", year), category+"_D/HNL_coupling_1")
 
                 for idx in indices:
                     pred = hist_pred_input.GetBinContent(idx)

@@ -10,8 +10,8 @@ ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = ["2016","2017", "2018"]
 #YEARS = ["2016"]
-#COUPLINGS = [1,2,7,12, 47,52]
-COUPLINGS = [2,7,12]
+COUPLINGS = [1,2,7,12,47,52,67]
+#COUPLINGS = [7]
 
 NBINS = 48
 ZERO_BIN_RATE = 0.001
@@ -112,7 +112,8 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
     systematics_uncorrelated = [
         "pu", "unclEn", "jesTotal", "jer", 
         "trigger", "tight_muon_iso", "tight_muon_id", "tight_electron_id", 
-        "loose_muon_id" , "loose_electron_id", "resolvedLepton_track_reco",
+        "loose_muon_id" , "loose_electron_id", "resolvedLepton_track_reco", 
+        "loose_muon_reco", 
         "tagger_q", "tagger_qmu", "tagger_qe", 
         "scale", "pdf"
     ]
@@ -127,7 +128,7 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
         cb.cp().signals().AddSyst( cb, syst+"$ERA", "shape", ch.SystMap()(1.0) )
 
     cb.cp().AddSyst(cb, "lumi_$ERA", "lnN", ch.SystMap("era")([year], lumi_uncertainty[year]))
-    cb.cp().AddSyst(cb, "displaced_lepton_$ERA", "lnN", ch.SystMap("era")([year], 1.1))
+    #cb.cp().AddSyst(cb, "displaced_lepton_$ERA", "lnN", ch.SystMap("era")([year], 1.1))
 
     cb.cp().signals().ExtractShapes(
             "{}/{}_{}.root".format(hist_path, signal_name, year),
@@ -275,6 +276,7 @@ for proc in os.listdir(hist_path):
         print("Skipping "+proc+", special higher statistics sample exists")
         continue
     if "_2016" in proc:
+        #print ("it enters here")
         hnl_sample_list.append(proc.replace("_2016.root", ""))
         n_job += len(COUPLINGS)
 
