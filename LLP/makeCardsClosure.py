@@ -26,7 +26,9 @@ def get_hist(file_name, hist_name):
         return hist
 
 
-hist_path = "/home/hep/hsfar/private/limits/histo/abcd"
+hist_path = "/home/hep/hsfar/private/limits/histo/abcd/highmass_postunblinding"
+#hist_path = "/home/hep/hsfar/private/limits/histo/abcd/lowMass"
+#hist_path = "/home/hep/hsfar/private/limits/histo/abcd/highmass_postunblinding_relaxed"
 categories = [
     "mumu_OS", 
     "mumu_SS",
@@ -112,13 +114,19 @@ for topology in ["boosted", "resolved"]:
                         )
                 ) 
                     # 15 % non-closure uncert
-                    #uncertainty_name = "uncertainty_{}_{}_{}_{}".format(topology, year, ibin+1 , category_name) 
-                    uncertainty_name = "uncertainty_{}_{}_{}".format(topology, year, ibin+1 ) 
+                    uncertainty_name = "uncertainty_{}_{}_{}_{}".format(topology, year, ibin+1 , category_name) 
+                    #uncertainty_name = "uncertainty_{}_{}_{}".format(topology, year, ibin+1 ) 
                     #uncertainty_name = "uncertainty_{}_{}".format(topology, year) 
                     if topology == "boosted" : 
                        cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
-                    else : 
-                       cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
+		       if "mumu_OS" in category_name:
+		              uncertainty_name_OSMUMU = "unc_boosted_{}_{}_{}".format(year,category_name, ibin+1)
+		              cb.cp().process([process_name]).bin([category_name]).AddSyst(cb, uncertainty_name_OSMUMU, "lnN", ch.SystMap("era")([year], 1.25))
+                    else :
+                       if ibin == 3 :
+                          cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.1))
+                       else :  
+                          cb.cp().process([process_name]).bin([name]).AddSyst(cb, uncertainty_name, "lnN", ch.SystMap("era")([year], 1.15))
                     # for determining uncertainy
                     #cb.cp().process([process_name]).bin([name]).AddSyst(cb, "uncertainty"+topology+year, "rateParam", ch.SystMap("era")([year], 1.))
                     #param = cb.GetParameter("uncertainty"+topology+year)

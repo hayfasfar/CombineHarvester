@@ -50,7 +50,7 @@ ROOT.gStyle.SetTitleColor(1, "XYZ")
 ROOT.gStyle.SetTitleFont(43, "XYZ")
 ROOT.gStyle.SetTitleSize(32, "XYZ")
 ROOT.gStyle.SetTitleXOffset(1.135)
-ROOT.gStyle.SetTitleOffset(1.32, "YZ")
+#ROOT.gStyle.SetTitleOffset(1.32, "YZ")
 
 ROOT.gStyle.SetLabelColor(1, "XYZ")
 ROOT.gStyle.SetLabelFont(43, "XYZ")
@@ -152,7 +152,7 @@ def makeLegend(x1,y1,x2,y2):
     legend = ROOT.TLegend(x1,y1,x2,y2)
     legend.SetBorderSize(0)
     legend.SetTextFont(43)
-    legend.SetTextSize(29)
+    legend.SetTextSize(23)
     legend.SetFillStyle(0)
     rootObj.append(legend)
     return legend
@@ -178,10 +178,10 @@ def makeCMSText(x1,y1,additionalText=None,dx=0.088, size=30):
     
 def makeLumiText(x1, y1, lumi, year, size=30):
     pText = ROOT.TPaveText(x1,y1,x1,y1,"NDC")
-    pText.AddText(str(lumi)+" fb#lower[-0.8]{#scale[0.7]{-1}} (" + year + ")")
-    pText.SetTextFont(63)
-    pText.SetTextSize(size)
-    pText.SetTextAlign(13)
+    pText.AddText("%s fb#lower[-0.8]{#scale[0.7]{-1}} (%s)" % (lumi, "13 TeV"))
+    pText.SetTextFont(43)
+    pText.SetTextSize(31)
+    pText.SetTextAlign(32)
     rootObj.append(pText)
     pText.Draw("Same")
     return pText
