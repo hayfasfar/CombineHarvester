@@ -34,14 +34,14 @@ def plot_pulls(pulls, pulls_prefit, save_text):
     pdf = stats.norm.pdf(x, meanPull, sigmaPull)*len(pulls)
     plt.plot(x, pdf, color="red", lw=3, ls='--', label="postfit: $\mu = %.2f \pm %.2f, \sigma=%.2f \pm %.2f$" % (meanPull, uncMeanPull, sigmaPull, uncSigmaPull))
 
-    pdfPre = stats.norm.pdf(x, meanPullPre, sigmaPullPre)*len(pulls)
-    plt.plot(x, pdfPre, color="black", lw=3, ls='--', label="prefit: $\mu = %.2f \pm %.2f, \sigma=%.2f \pm %.2f$" % (meanPullPre, uncMeanPullPre, sigmaPullPre, uncSigmaPullPre))
+    #pdfPre = stats.norm.pdf(x, meanPullPre, sigmaPullPre)*len(pulls)
+    #plt.plot(x, pdfPre, color="black", lw=3, ls='--', label="prefit: $\mu = %.2f \pm %.2f, \sigma=%.2f \pm %.2f$" % (meanPullPre, uncMeanPullPre, sigmaPullPre, uncSigmaPullPre))
 
     ax.set_ylabel('Entries')
     ax.set_xlabel('Pull, p')
     ax.legend(loc=9)
-    plt.savefig('closure/pulls_%s.pdf' % (save_text))
-    plt.savefig('closure/pulls_%s.png' % (save_text))
+    plt.savefig('closure/pulls_%s_highmass_perbin.pdf' % (save_text))
+    plt.savefig('closure/pulls_%s_highmass_perbin.png' % (save_text))
     fig.clf()
 
 def make_pretty(s):
@@ -80,15 +80,15 @@ def get_hist(file_name, hist_name):
     
 def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="boosted", extra_text="", kappa_string=""):
 
-    colour_prefit = "#07a6d8"
+    colour_prefit = "#15616d"
 
     lumi = {"2016": 35.9, "2017": 41.5, "2018": 59.7, "combined": 137.1}
 
     pred_hist.GetYaxis().SetTitle("Events / category")
     pred_hist.GetYaxis().SetTitleOffset(1.2)
-    pred_hist.SetLineColor(ROOT.kRed+1)
+    pred_hist.SetLineColor(ROOT.kAzure+1)
     pred_hist.SetMarkerSize(0)
-    pred_hist.SetFillColor(ROOT.kRed+1)
+    pred_hist.SetFillColor(ROOT.kAzure+1)
 
     pred_hist_prefit.SetLineColor(ROOT.TColor.GetColor(colour_prefit))
     pred_hist_prefit.SetMarkerSize(0)
@@ -113,9 +113,9 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     pull_hist = residuals.Clone("pull_hist")
     pull_hist_pre = residuals.Clone("pull_hist_pre")
 
-    err_hist.SetFillColor(ROOT.TColor.GetColor("#f7d54c"))
+    err_hist.SetFillColor(ROOT.kAzure+2)
     err_hist.SetFillStyle(3345)
-    err_hist.SetLineColor(ROOT.TColor.GetColor("#f7d54c"))
+    err_hist.SetLineColor(ROOT.kAzure+2)
 
     err_hist_ratio = err_hist.Clone("err_hist_ratio")
 
@@ -137,7 +137,17 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
 
         ratio = obs/pred
 
-        pull = (obs-pred)/pred
+        #pull = (obs-pred)/err_pred
+        if obs - err_pred**2 <= 0 :
+           pull = 0
+        else :
+          if obs > 0 :
+            #print "predict is " , pred , "error " , err_pred , " obs " , obs
+            pull = (obs-pred)/math.sqrt((obs - err_pred**2))
+          elif obs == 0 :
+            #print "predict is " , pred , "error " , err_pred
+            obs = 1.8
+            pull = (obs-pred)/math.sqrt((obs - err_pred**2))
         pull_hist.SetBinContent(j+1, pull)
         pull_hist.SetBinError(j+1, 0)
 
@@ -153,7 +163,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
         residuals.SetBinError(j+1, err_obs*ratio/(obs+1e-9))
 
 
-    #plot_pulls(pulls, pulls_pre, topology+year)
+    plot_pulls(pulls, pulls_pre, topology+year)
 
     cv = style.makeCanvas()
     cv.SetBottomMargin(0.1)
@@ -173,12 +183,12 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     pad2.SetRightMargin(0.1)
     pad2.SetBorderMode(0)
 
-    # pad3 = ROOT.TPad("pad3","pad3",0,0.03,1,0.22)
-    # pad3.SetTopMargin(0)
-    # pad3.SetBottomMargin(0.3)
-    # pad3.SetLeftMargin(0.13)
-    # pad3.SetRightMargin(0.1)
-    # pad3.SetBorderMode(0)
+    #pad3 = ROOT.TPad("pad3","pad3",0,0.03,1,0.22)
+    #pad3.SetTopMargin(0)
+    #pad3.SetBottomMargin(0.3)
+    #pad3.SetLeftMargin(0.13)
+    #pad3.SetRightMargin(0.1)
+    #pad3.SetBorderMode(0)
 
     pad1.Draw()
     pad2.Draw()
@@ -223,11 +233,11 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     text_OS = ROOT.TLatex(obs_hist.GetNbinsX()*1/4-1, 0.6*pred_hist.GetMaximum(), "OS")
     text_SS = ROOT.TLatex(obs_hist.GetNbinsX()*3/4-1, 0.6*pred_hist.GetMaximum(), "SS")
 
-    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
-    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<3")
+    text_prompt = ROOT.TLatex(obs_hist.GetNbinsX()*1/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
+    text_prompt_2 = ROOT.TLatex(obs_hist.GetNbinsX()*4/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}<1")
 
-    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, 0.5*pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
-    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, 0.5*pred_hist.GetMaximum(), "3<d^{sig}_{xy}<10")
+    text_medium = ROOT.TLatex(obs_hist.GetNbinsX()*2/6-2.5, 0.5*pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
+    text_medium_2 = ROOT.TLatex(obs_hist.GetNbinsX()*5/6-2.5, 0.5*pred_hist.GetMaximum(), "1<d^{sig}_{xy}<10")
 
     text_displaced = ROOT.TLatex(obs_hist.GetNbinsX()*3/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
     text_displaced_2 = ROOT.TLatex(obs_hist.GetNbinsX()*6/6-2.5, 0.5*pred_hist.GetMaximum(), "d^{sig}_{xy}>10")
@@ -244,13 +254,13 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
 
     #legend.AddEntry(err_hist, 'stat. unc', 'f')
 
-    # pad3.cd()
-    # pull_hist.GetYaxis().SetRangeUser(-3.5, 3.5)
-    # pull_hist.GetYaxis().SetTitleOffset(1)
-    # pull_hist.SetMarkerColor(ROOT.kAzure+2)
-    # pull_hist.GetYaxis().SetTitle("Pull")
-    # pull_hist.GetYaxis().CenterTitle()
-    # pull_hist.Draw("P")
+    #pad3.cd()
+    #pull_hist.GetYaxis().SetRangeUser(-3.5, 3.5)
+    #pull_hist.GetYaxis().SetTitleOffset(1)
+    #pull_hist.SetMarkerColor(ROOT.kAzure+2)
+    #pull_hist.GetYaxis().SetTitle("Pull")
+    #pull_hist.GetYaxis().CenterTitle()
+    #pull_hist.Draw("P")
 
     # pull_hist_pre.SetMarkerColor(ROOT.TColor.GetColor(colour_prefit))
     # pull_hist_pre.GetYaxis().SetRangeUser(-3.5, 3.5)
@@ -270,7 +280,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     # lrespull_minus.SetLineStyle(2)
 
     # lrespull.Draw("SAME")
-
+    
     pad2.cd()
     residuals.GetYaxis().SetTitle("Obs/Pred")
     residuals.GetYaxis().SetTitleOffset(1.2)
@@ -279,7 +289,7 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     #n1 + 100*n2
     residuals.SetMarkerColor(1)
     residuals.SetLineColor(1)
-    residuals.GetYaxis().SetRangeUser(0., 2.6)
+    residuals.GetYaxis().SetRangeUser(0.2, 1.8)
     residuals.Draw("P")
     lres = ROOT.TLine(-0.5, 1., n_bins_total-0.5, 1.)
     lres.Draw("SAME")
@@ -287,12 +297,12 @@ def plot_yields(obs_hist, pred_hist_prefit, pred_hist, year="2016", topology="bo
     err_hist_ratio.Draw("E2 SAME")
 
     pad1.cd()
-    pad1.SetLogy()
-    pred_hist.SetMinimum(1e-3)
-    pred_hist_prefit.SetMinimum(1e-3)
-    err_hist.SetMinimum(1e-3)
-    obs_hist.SetMinimum(1e-3)
-    pred_hist.GetYaxis().SetRangeUser(0.3, 300*pred_hist.GetMaximum())
+    #pad1.SetLogy()
+    #pred_hist.SetMinimum(1e-3)
+    #pred_hist_prefit.SetMinimum(1e-3)
+    #err_hist.SetMinimum(1e-3)
+    #obs_hist.SetMinimum(1e-3)
+    #pred_hist.GetYaxis().SetRangeUser(0.3, 300*pred_hist.GetMaximum())
 
     pred_hist.Draw("HIST")
     err_hist.Draw("E2 SAME")
@@ -333,8 +343,8 @@ n_bins_total = len(categories)*3
 category_names = []
 category_names_raw = []
 nbins = 6
-kappa_string = ""
-root_file = "fitDiagnostics.root"
+
+root_file = "fitDiagnostics_highMass_relaxed_perbin.root"
 
 for k, topology in enumerate(["boosted", "resolved"]):
 
@@ -348,17 +358,17 @@ for k, topology in enumerate(["boosted", "resolved"]):
         for j, category in enumerate(categories):
             category_names_raw.append(category)
             category_names.append(make_pretty(category))
-            
+            kappa_string = ""
+            '''
             rootFile = ROOT.TFile(root_file)
             roo_fit_result = rootFile.Get("fit_b")
-            kappa_info = roo_fit_result.floatParsFinal().find("uncertainty_"+topology+"_"+year)
-            print "kappa info is " , kappa_info
-            kappa = 3. ** kappa_info.getVal()
-            kappa_unc = 3. ** (kappa_info.getVal()+kappa_info.getError()) - kappa
+            kappa_info = roo_fit_result.floatParsFinal().find("uncertainty_"+topology+"_"+year+"_3")
+            kappa = 1.15 ** kappa_info.getVal()
+            kappa_unc = 1.15 ** (kappa_info.getVal()+kappa_info.getError()) - kappa
             kappa_string = "#kappa = %.2f#pm%.2f" % (kappa, kappa_unc)
             print(kappa_string)
             rootFile.Close()
-
+            '''
             hist_pred_raw = get_hist(root_file, "shapes_fit_b/ch"+str(k+1+i*2)+"_"+category+"_D/total_background")
             hist_pred_prefit_raw = get_hist(root_file, "shapes_prefit/ch"+str(k+1+i*2)+"_"+category+"_D/total_background")
             hist_obs_raw = get_hist(root_file, "shapes_fit_b/ch"+str(k+1+i*2)+"_"+category+"_D/data")
@@ -390,4 +400,4 @@ for k, topology in enumerate(["boosted", "resolved"]):
                 hist_obs.GetXaxis().SetBinLabel(hist_index, shorten(category))
                 hist_pred.GetXaxis().SetBinLabel(hist_index, shorten(category))
 
-        plot_yields(hist_obs, hist_pred_prefit, hist_pred, year=year, topology=topology, extra_text="3l80", kappa_string=kappa_string)
+        plot_yields(hist_obs, hist_pred_prefit, hist_pred, year=year, topology=topology, extra_text="VR1_relaxed", kappa_string=kappa_string)
