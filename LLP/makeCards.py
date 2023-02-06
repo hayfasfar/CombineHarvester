@@ -10,8 +10,8 @@ ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
 YEARS = ["2016","2017", "2018"]
 #YEARS = ["2016"]
-COUPLINGS = [1,2,7,12,47,52,67]
-#COUPLINGS = [7]
+#COUPLINGS = [1,2,7,12,47,52,67]
+COUPLINGS = [1,52]
 
 NBINS = 48
 ZERO_BIN_RATE = 0.001
@@ -254,8 +254,8 @@ def make_datacard(cats, cats_signal, signal_name, output_path, coupling=12, year
 
 parser = argparse.ArgumentParser()
 ### the path to use with final cuts after reblinding is ="/vols/cms/hsfar/hists_merged2/" 
-#parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
-parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged2/")
+parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged/")
+#parser.add_argument("--path", default="/vols/cms/hsfar/hists_merged_taus/")
 args = parser.parse_args()
 hist_path = args.path
 

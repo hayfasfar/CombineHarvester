@@ -36,6 +36,7 @@ python plotLimits.py
 * Optionally, make a rename dictionary using ```python makePUrenameDict.py``` for aesthetic purposes
 * Run the following set of commands. The runtime is very long for all three year combination, so consider only running on one year.
 * After unblinding, consider replacing ```-t -1``` by ```--rMin -1```. Otherwise impacts will be one sided as signal strength is forced positive
+* You can use the --job-mode SGE option for a shorter runtime.
 
 ```
 text2workspace.py cards/2016/coupling_1/HNL_majorana_pt20_ctau1p0e01_massHNL8p0_Vall6p702e-04/out.txt -o workspace.root
