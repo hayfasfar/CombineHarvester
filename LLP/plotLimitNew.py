@@ -138,8 +138,15 @@ scenarios = {
         'couplingFct': lambda couplingSum2Value: (math.sqrt(couplingSum2Value)/2.)**2
     }
 }
-'''
+
 scenarios = {
+
+     'ee': {
+        'title': scenarioTitle(1,0,0),
+        'ylabel': ve2Sym,
+        'couplingWeight':2.0,
+        'couplingFct': lambda couplingSum2Value: couplingSum2Value
+    },
     'mumu': {
         'title': scenarioTitle(0,1,0),
         'ylabel': vmu2Sym,
@@ -147,7 +154,7 @@ scenarios = {
         'couplingFct': lambda couplingSum2Value: couplingSum2Value
     },
 }
-'''
+
 
 
 
@@ -612,9 +619,23 @@ for year in years:
                 logLimitExp68Down.append(math.log(limits['exp-1']))
                 logLimitExp95Up.append(math.log(limits['exp+2']))
                 logLimitExp95Down.append(math.log(limits['exp-2']))
- 
+                
                 if not blinded:
                     logLimitObs.append(math.log(limits['obs']))
+                
+                #expand to 0.5 to remove edge artifacts
+                if int(mass)==1:
+                    masses.append(0.5)
+                    coupling2Values.append(coupling2Value)
+                    logTheoryXsecs.append(math.log(theoryXsec))
+                    logLimitExp.append(math.log(limits['exp0']))
+                    logLimitExp68Up.append(math.log(limits['exp+1']))
+                    logLimitExp68Down.append(math.log(limits['exp-1']))
+                    logLimitExp95Up.append(math.log(limits['exp+2']))
+                    logLimitExp95Down.append(math.log(limits['exp-2']))
+                    if not blinded:
+                        logLimitObs.append(math.log(limits['obs']))
+                
             
             masses = np.array(masses,dtype=np.float32)
             coupling2Values = np.array(coupling2Values,dtype=np.float32)
@@ -889,9 +910,9 @@ for year in years:
             
             yrefOffset = cvymax-0.03
             for refEntry in refEntries:
-                legendRefs = ROOT.TLegend(cvxmax-0.32,yrefOffset,cvxmax-0.03,yrefOffset-0.031*len(refEntry),"","NDC")
+                legendRefs = ROOT.TLegend(cvxmax-0.34,yrefOffset,cvxmax-0.05,yrefOffset-0.031*len(refEntry),"","NDC")
                 rootObj.append(legendRefs)
-                yrefOffset -= 0.031*len(refEntry)+0.012
+                yrefOffset -= 0.031*len(refEntry)+0.010
                 legendRefs.SetBorderSize(0)
                 legendRefs.SetFillStyle(0)
                 legendRefs.SetTextFont(43)

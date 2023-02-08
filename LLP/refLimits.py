@@ -21,8 +21,12 @@ def getRefs(hnl_type,scenario):
     entries = []
 
     if scenario == 12:
-        hist_displaced_dirac = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 3/Graph1D_y1")
-        hist_displaced_majorana = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 4/Graph1D_y1")
+        hist_displaced_dirac = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH mu Dirac model/Graph1D_y1")
+        hist_displaced_majorana = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH mu Majorana model/Graph1D_y1")
+
+        #old limits
+        #hist_displaced_dirac = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 3/Graph1D_y1")
+        #hist_displaced_majorana = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 4/Graph1D_y1")
         hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 6/Graph1D_y1")
         hist_displaced_dirac.SetLineColor(color_ATLAS.GetNumber())
         hist_displaced_majorana.SetLineColor(color_ATLAS.GetNumber())
@@ -35,14 +39,17 @@ def getRefs(hnl_type,scenario):
         if hnl_type == "dirac":
             #hist_displaced_dirac.Draw("SAME")
             entries.append([
-                [hist_displaced_dirac, "ATLAS, displaced, LNC"],
-                [None, "JHEP 10 (2019) 265"]
+                [hist_displaced_dirac, "ATLAS, single flavour N"],
+                [None, "arXiv:2204.11988"]
             ])
 
         elif hnl_type == "majorana":
             hist_displaced_majorana.Draw("SAME")
             entries.append([
-                [hist_displaced_majorana, "ATLAS, displaced, LNV"],
+                [hist_displaced_majorana, "ATLAS, single flavour N"],
+                [None, "arXiv:2204.11988"]
+            ])
+            entries.append([
                 [hist_prompt, "ATLAS, prompt, LNV"],
                 [None, "JHEP 10 (2019) 265"]
             ])
@@ -123,7 +130,18 @@ def getRefs(hnl_type,scenario):
         
 
     if scenario == 2:
+        hist_displaced_dirac = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH e Dirac model/Graph1D_y1")
+        hist_displaced_majorana = get_graph("hepdata/HEPData-ins2072355-v1-root.root", "CL for 1SFH e Majorana model/Graph1D_y1")
+
+        hist_displaced_dirac.SetLineColor(color_ATLAS.GetNumber())
+        hist_displaced_majorana.SetLineColor(color_ATLAS.GetNumber())
+        hist_displaced_dirac.SetLineWidth(2)
+        hist_displaced_majorana.SetLineWidth(2)
+
+    
         if hnl_type == "majorana":
+            
+        
             hist_prompt = get_graph("hepdata/HEPData-ins1736526-v1.root", "Table 5/Graph1D_y1")
             hist_prompt.SetLineStyle(3)
             hist_prompt.SetLineWidth(3)
@@ -134,6 +152,10 @@ def getRefs(hnl_type,scenario):
                 [hist_prompt, "ATLAS, prompt, LNV"],
                 [None, "JHEP 10 (2019) 265"]
             ])
+            entries.append([
+                [hist_displaced_majorana, "ATLAS, single flavour N"],
+                [None, "arXiv:2204.11988"]
+            ])
 
             mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 13., 13., 11., 9., 7., 6.])
             coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 2.6e-5, 1.2e-5, 6.3e-6, 1.6e-6, 1.2e-6, 9.3e-7, 8.5e-7, 8.8e-7, 1e-6, 6.5e-6, 3.1e-5, 1.4e-4, 8e-4, 2.3e-3])
@@ -142,7 +164,10 @@ def getRefs(hnl_type,scenario):
             mass_values_exo_20_009 = np.asarray([1., 2., 3., 4., 5., 7., 8., 9., 11., 12., 14., 14., 11., 9., 7., 6.])
             coupling_values_exo_20_009 = np.asarray([1e-3, 1e-4, 3.2e-5, 1.5e-5, 7.4e-6, 2e-6, 1.5e-6, 1e-6, 9e-7, 8.7e-7, 1e-6, 1e-5, 8.7e-5, 3.5e-4, 2e-3, 5e-3])
 
-        
+            entries.append([
+                [hist_displaced_dirac, "ATLAS, single flavour N"],
+                [None, "arXiv:2204.11988"]
+            ])
 
         graph_exo_20_009 = ROOT.TGraph(len(mass_values_exo_20_009),mass_values_exo_20_009,coupling_values_exo_20_009)
         graph_exo_20_009.SetLineColor(color_CMS.GetNumber())
